@@ -39,6 +39,8 @@ public:
 
 	// Returns GBP in format £XX.xx
 	std::string ToString();
+	// Return GBP in format XX.xx
+	double ToDouble();
 	// Returns internal value of mills
 	long long int GetMills();
 };

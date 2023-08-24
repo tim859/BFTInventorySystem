@@ -7,10 +7,15 @@ class Herb;
 class HerbDBHandler : public DBHandler
 {
 public:
+	HerbDBHandler();
 	QSqlQuery GetAllHerbsFromDB();
 	QSqlQuery SearchDBForHerbs();
 	bool AddHerbToDB(Herb newHerb);
-	bool DeleteHerbFromDB();
-	bool EditHerbInDB();
+	bool EditHerbInDB(Herb editedHerb);
+	bool DeleteHerbFromDB(int rowID);
+	int GetRowsInHerbTable();
+
+private:
+	QSqlDatabase db;
 };
 

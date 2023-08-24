@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 
 static const std::string invalidArgumentMessage = "Monetary quantity out of range.",
 overflowMessage = "Monetary overflow.",
@@ -84,6 +85,19 @@ std::string Money::ToString()
 
 	toReturn << "\u00A3" << pounds << '.' << std::setw(2) << std::setfill('0') << std::right << pence;
 	return toReturn.str();
+}
+
+double Money::ToDouble()
+{
+	int pounds = mills / millsPerGBP;
+	int pence = (mills >= 0) ? (mills % millsPerGBP) / millsPerPenny : -(mills % millsPerGBP) / millsPerPenny;
+
+	// Calculate the fractional value of pence
+	double penceFraction = static_cast<double>(pence) / 100.0;
+
+	// Combine pounds and penceFraction to form the total money value as a double
+	double totalValue = static_cast<double>(pounds) + penceFraction;
+	return totalValue;
 }
 
 long long int Money::GetMills() { 

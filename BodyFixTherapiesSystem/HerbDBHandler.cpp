@@ -1,16 +1,22 @@
 #include "HerbDBHandler.h"
 #include "Herb.h"
+#include <iostream>
+#include <qsqlerror.h>
+
+HerbDBHandler::HerbDBHandler()
+{
+    db = GetBFTDB();
+}
 
 QSqlQuery HerbDBHandler::GetAllHerbsFromDB() {
 
-    QSqlDatabase db = GetBFTDB();
     QSqlQuery herbQuery;
 
     if (!db.open()) {
         return herbQuery;
     }
 
-    herbQuery.exec("SELECT * FROM herbs");
+    herbQuery.exec("SELECT rowid, * FROM herbs");
 
     return herbQuery;
     db.close();
@@ -24,20 +30,15 @@ QSqlQuery HerbDBHandler::SearchDBForHerbs()
 bool HerbDBHandler::AddHerbToDB(Herb newHerb)
 {
     QSqlQuery insertQuery;
-    insertQuery.prepare("INSERT INTO herbs (herb_name, category, current_stock_total, cost_per_gram, show_supplier_orders, starting_balance, total_grams_purchased, total_grams_sold, preferred_supplier, starting_cost)"
-                        "VALUES (:herb_name, :category, :current_stock_total, :cost_per_gram, :show_supplier_orders, :starting_balance, :total_grams_purchased, :total_grams_sold, :preferred_supplier, :starting_cost)");
+    insertQuery.prepare("INSERT INTO herbs (name, category, current_stock_total, cost_per_gram, preferred_supplier)"
+                        "VALUES (:name, :category, :current_stock_total, :cost_per_gram, :preferred_supplier)");
 
     // bind values to placeholders
     insertQuery.bindValue(0, QString::fromStdString(newHerb.name));
     insertQuery.bindValue(1, QString::fromStdString(newHerb.category));
     insertQuery.bindValue(2, newHerb.currentStockTotal);
     insertQuery.bindValue(3, newHerb.costPerGram.GetMills());
-    insertQuery.bindValue(4, newHerb.showSupplierOrders);
-    insertQuery.bindValue(5, newHerb.startingBalance);
-    insertQuery.bindValue(6, newHerb.totalGramsPurchased);
-    insertQuery.bindValue(7, newHerb.totalGramsSold);
-    insertQuery.bindValue(8, QString::fromStdString(newHerb.preferredSupplier));
-    insertQuery.bindValue(9, newHerb.startingCost.GetMills());
+    insertQuery.bindValue(4, QString::fromStdString(newHerb.preferredSupplier));
 
     // execute the query and check for failure
     if (insertQuery.exec()) {
@@ -47,12 +48,54 @@ bool HerbDBHandler::AddHerbToDB(Herb newHerb)
     return false;
 }
 
-bool HerbDBHandler::DeleteHerbFromDB()
+bool HerbDBHandler::EditHerbInDB(Herb editedHerb)
 {
+    QSqlQuery updateQuery;
+    updateQuery.prepare("UPDATE herbs "
+                        "SET name = :name, "
+                        "    category = :category, "
+                        "    current_stock_total = :current_stock_total, "
+                        "    cost_per_gram = :cost_per_gram, "
+                        "    preferred_supplier = :preferred_supplier "
+                        "WHERE rowid = :rowid");
+
+    updateQuery.bindValue(":name", QString::fromStdString(editedHerb.name));
+    updateQuery.bindValue(":category", QString::fromStdString(editedHerb.category));
+    updateQuery.bindValue(":current_stock_total", editedHerb.currentStockTotal);
+    updateQuery.bindValue(":cost_per_gram", editedHerb.costPerGram.GetMills());
+    updateQuery.bindValue(":preferred_supplier", QString::fromStdString(editedHerb.preferredSupplier));
+    updateQuery.bindValue(":rowid", editedHerb.id);
+
+    if (updateQuery.exec()) {
+        return true;
+    }
+
+    //std::cout << "SQL error: " << updateQuery.lastError().text().toStdString();
     return false;
 }
 
-bool HerbDBHandler::EditHerbInDB()
+bool HerbDBHandler::DeleteHerbFromDB(int rowID)
 {
+    QSqlQuery deleteQuery;
+    deleteQuery.prepare("DELETE FROM herbs WHERE rowid = :rowid");
+    deleteQuery.bindValue(":rowid", rowID);
+
+    if (deleteQuery.exec()) {
+        return true;
+    }
+
     return false;
+}
+
+int HerbDBHandler::GetRowsInHerbTable()
+{
+    QSqlQuery herbQuery;
+    herbQuery.prepare("SELECT COUNT(*) FROM herbs");
+
+    if (herbQuery.exec()) {
+        int rowCount = herbQuery.value(0).toInt();
+        return rowCount;
+    }
+
+    return 0;
 }

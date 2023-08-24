@@ -1,5 +1,6 @@
 #include "HerbHandler.h"
 #include "Herb.h"
+#include <iostream>
 
 HerbHandler::HerbHandler()
 {
@@ -9,94 +10,72 @@ HerbHandler::HerbHandler()
 std::vector<Herb>* HerbHandler::GetAllHerbs() {
 
     herbList.clear();
-    bool tempShowSupplierOrders;
 	QSqlQuery herbQuery = herbDBHandler.GetAllHerbsFromDB();
 
     while (herbQuery.next()) {
-        if (herbQuery.value(4) == 0) {
-            tempShowSupplierOrders = false;
-        }
-        else {
-            tempShowSupplierOrders = true;
-        }
-        herbList.emplace_back(Herb(herbQuery.value(0).toString().toStdString(), 
-            herbQuery.value(1).toString().toStdString(), 
-            herbQuery.value(2).toInt(), 
-            Money(herbQuery.value(3).toInt(), 1),
-            tempShowSupplierOrders, 
-            herbQuery.value(5).toInt(), 
-            herbQuery.value(6).toInt(), 
-            herbQuery.value(7).toInt(), 
-            herbQuery.value(8).toString().toStdString(), 
-            Money(herbQuery.value(9).toInt(), 1)));
+        herbList.emplace_back(Herb(herbQuery.value(0).toInt(),
+            herbQuery.value(1).toString().toStdString(),
+            herbQuery.value(2).toString().toStdString(),
+            herbQuery.value(3).toInt(),
+            Money(herbQuery.value(4).toInt(), 1),
+            herbQuery.value(5).toString().toStdString()));
     }
 
     return &herbList;
 }
 
-std::vector<Herb> HerbHandler::SearchForHerbs()
+std::vector<Herb>* HerbHandler::GetSearchedHerbs(std::vector<Herb>* herbListToBeSearched, std::string searchString)
 {
-    return std::vector<Herb>();
+    std::vector<Herb>* searchedHerbList = new std::vector<Herb>;
+
+    for (int i = 0; i < herbListToBeSearched->size(); i++) {
+        // Convert both the name and the search string to lowercase for case-insensitive comparison
+        std::string herbNameLower = (*herbListToBeSearched)[i].name;
+        std::transform(herbNameLower.begin(), herbNameLower.end(), herbNameLower.begin(), ::tolower);
+        std::string searchStringLower = searchString;
+        std::transform(searchStringLower.begin(), searchStringLower.end(), searchStringLower.begin(), ::tolower);
+
+        // Check if the herb name contains the search string as a substring
+        if (herbNameLower.find(searchStringLower) != std::string::npos) {
+            searchedHerbList->push_back((*herbListToBeSearched)[i]);
+        }
+    }
+
+    return searchedHerbList;
 }
 
-std::vector<Herb>* HerbHandler::GetFilteredHerbs(int index, int filterType)
+std::vector<Herb>* HerbHandler::GetFilteredHerbs(std::vector<Herb>* herbListToBeFiltered, int index, int filterType)
 {
     if (filterType == 0) {
         switch (index) {
         case 1:
             // use lambda functions to define sorting behaviour for each desired sorting specifier
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.name < herb2.name;
                 });
             break;
 
         case 2:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.category < herb2.category;
                 });
             break;
 
         case 3:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.currentStockTotal < herb2.currentStockTotal;
                 });
             break;
 
         case 4:
-            // doesnt work at all, rewrite
-            std::sort(herbList.begin(), herbList.end(), [](Herb herb1, Herb herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](Herb herb1, Herb herb2) {
                 return herb1.costPerGram.GetMills() < herb2.costPerGram.GetMills();
                 });
             break;
 
         case 5:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
-                return herb1.startingBalance < herb2.startingBalance;
-                });
-            break;
-
-        case 6:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
-                return herb1.totalGramsPurchased < herb2.totalGramsPurchased;
-                });
-            break;
-
-        case 7:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
-                return herb1.totalGramsSold < herb2.totalGramsSold;
-                });
-            break;
-
-        case 8:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.preferredSupplier < herb2.preferredSupplier;
-                });
-            break;
-
-        case 9:
-            // same problem as above
-            std::sort(herbList.begin(), herbList.end(), [](Herb herb1, Herb herb2) {
-                return herb1.startingCost.GetMills() < herb2.startingCost.GetMills();
                 });
             break;
         }
@@ -104,82 +83,96 @@ std::vector<Herb>* HerbHandler::GetFilteredHerbs(int index, int filterType)
     else if (filterType == 1) {
         switch (index) {
         case 1:
-            // use lambda functions to define sorting behaviour for each desired sorting specifier
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.name > herb2.name;
                 });
             break;
 
         case 2:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.category > herb2.category;
                 });
             break;
 
         case 3:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.currentStockTotal > herb2.currentStockTotal;
                 });
             break;
 
         case 4:
-            // doesnt work at all, rewrite
-            std::sort(herbList.begin(), herbList.end(), [](Herb herb1, Herb herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](Herb herb1, Herb herb2) {
                 return herb1.costPerGram.GetMills() > herb2.costPerGram.GetMills();
                 });
             break;
 
         case 5:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
-                return herb1.startingBalance > herb2.startingBalance;
-                });
-            break;
-
-        case 6:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
-                return herb1.totalGramsPurchased > herb2.totalGramsPurchased;
-                });
-            break;
-
-        case 7:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
-                return herb1.totalGramsSold > herb2.totalGramsSold;
-                });
-            break;
-
-        case 8:
-            std::sort(herbList.begin(), herbList.end(), [](const Herb& herb1, const Herb& herb2) {
+            std::sort(herbListToBeFiltered->begin(), herbListToBeFiltered->end(), [](const Herb& herb1, const Herb& herb2) {
                 return herb1.preferredSupplier > herb2.preferredSupplier;
-                });
-            break;
-
-        case 9:
-            // same problem as above
-            std::sort(herbList.begin(), herbList.end(), [](Herb herb1, Herb herb2) {
-                return herb1.startingCost.GetMills() > herb2.startingCost.GetMills();
                 });
             break;
         }
     }
 
-    return &herbList;
+    return herbListToBeFiltered;
 }
 
-bool HerbHandler::AddHerb(Herb newHerb)
+std::vector<Herb>* HerbHandler::GetSearchedAndFilteredHerbs(std::vector<Herb>* herbListToBeSearchedAndFiltered, std::string searchString, int index, int filterType)
 {
+    if (searchString.empty() && index == 0) {
+        // neither search or filter
+        return herbListToBeSearchedAndFiltered;
+    }
+    if (searchString.empty()) {
+        // filter only
+        return GetFilteredHerbs(herbListToBeSearchedAndFiltered, index, filterType);
+    }
+    else if (index == 0) {
+        // search only
+        return GetSearchedHerbs(herbListToBeSearchedAndFiltered, searchString);
+    }
+
+    // search and filter
+    std::vector<Herb>* searchedAndFilteredHerbList;
+    searchedAndFilteredHerbList = GetSearchedHerbs(herbListToBeSearchedAndFiltered, searchString);
+    searchedAndFilteredHerbList = GetFilteredHerbs(searchedAndFilteredHerbList, index, filterType);
+    return searchedAndFilteredHerbList;
+}
+
+bool HerbHandler::AddHerb(std::string name, std::string category, int currentStockTotal, double costPerGram, std::string preferredSupplier)
+{
+    Herb newHerb(herbDBHandler.GetRowsInHerbTable() + 1, name, category, currentStockTotal, Money(costPerGram), preferredSupplier);
+
     if (herbDBHandler.AddHerbToDB(newHerb)) {
+        herbList.push_back(newHerb);
         return true;
     }
 
     return false;
 }
 
-bool HerbHandler::DeleteHerb()
+bool HerbHandler::EditHerb(int rowID, std::string newName, std::string newCategory, int newCurrentStockTotal, double newCostPerGram, std::string newPreferredSupplier)
 {
+    Herb editedHerb(rowID, newName, newCategory, newCurrentStockTotal, Money(newCostPerGram), newPreferredSupplier);
+
+    if (herbDBHandler.EditHerbInDB(editedHerb)) {
+        if (!herbList.empty()) {
+            herbList[rowID - 1] = editedHerb;
+        }
+        return true;
+    }
+
     return false;
 }
 
-bool HerbHandler::EditHerb()
+bool HerbHandler::DeleteHerb(int rowID)
 {
+    if (herbDBHandler.DeleteHerbFromDB(rowID)) {
+        if (rowID >= 0 && rowID < herbList.size()) {
+            herbList.erase(herbList.begin() + rowID);
+        }
+        return true;
+    }
+
     return false;
 }

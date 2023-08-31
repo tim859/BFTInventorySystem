@@ -19,4 +19,6 @@ struct Herb {
     int currentStockTotal;
     Money costPerGram;
     std::string preferredSupplier;
+
+    friend std::ostream& operator<<(std::ostream& os, Herb& obj);
 };

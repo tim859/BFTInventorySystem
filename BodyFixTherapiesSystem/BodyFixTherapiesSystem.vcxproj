@@ -88,20 +88,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FormulaHandler.cpp" />
+    <ClCompile Include="Herb.cpp" />
     <ClCompile Include="Money.cpp" />
     <QtRcc Include="BodyFixTherapiesSystem.qrc" />
     <QtUic Include="BodyFixTherapiesSystem.ui" />
     <QtMoc Include="BodyFixTherapiesSystem.h" />
     <ClCompile Include="BodyFixTherapiesSystem.cpp" />
     <ClCompile Include="DBHandler.cpp" />
-    <ClCompile Include="HerbDBHandler.cpp" />
     <ClCompile Include="HerbHandler.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DBHandler.h" />
+    <ClInclude Include="Formula.h" />
+    <ClInclude Include="FormulaHandler.h" />
     <ClInclude Include="Herb.h" />
-    <ClInclude Include="HerbDBHandler.h" />
     <ClInclude Include="HerbHandler.h" />
     <ClInclude Include="Money.h" />
   </ItemGroup>

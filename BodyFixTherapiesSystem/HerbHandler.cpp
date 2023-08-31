@@ -10,7 +10,7 @@ HerbHandler::HerbHandler()
 std::vector<Herb>* HerbHandler::GetAllHerbs() {
 
     herbList.clear();
-	QSqlQuery herbQuery = herbDBHandler.GetAllHerbsFromDB();
+	QSqlQuery herbQuery = DBHandler::GetInstance().GetAllHerbsFromDB();
 
     while (herbQuery.next()) {
         herbList.emplace_back(Herb(herbQuery.value(0).toInt(),
@@ -117,7 +117,7 @@ std::vector<Herb>* HerbHandler::GetFilteredHerbs(std::vector<Herb>* herbListToBe
     return herbListToBeFiltered;
 }
 
-std::vector<Herb>* HerbHandler::GetSearchedAndFilteredHerbs(std::vector<Herb>* herbListToBeSearchedAndFiltered, std::string searchString, int index, int filterType)
+std::vector<Herb>* HerbHandler::GetSearchedAndSortedHerbs(std::vector<Herb>* herbListToBeSearchedAndFiltered, std::string searchString, int index, int filterType)
 {
     if (searchString.empty() && index == 0) {
         // neither search or filter
@@ -141,9 +141,9 @@ std::vector<Herb>* HerbHandler::GetSearchedAndFilteredHerbs(std::vector<Herb>* h
 
 bool HerbHandler::AddHerb(std::string name, std::string category, int currentStockTotal, double costPerGram, std::string preferredSupplier)
 {
-    Herb newHerb(herbDBHandler.GetRowsInHerbTable() + 1, name, category, currentStockTotal, Money(costPerGram), preferredSupplier);
+    Herb newHerb(DBHandler::GetInstance().GetRowsInHerbTable() + 1, name, category, currentStockTotal, Money(costPerGram), preferredSupplier);
 
-    if (herbDBHandler.AddHerbToDB(newHerb)) {
+    if (DBHandler::GetInstance().AddHerbToDB(newHerb)) {
         herbList.push_back(newHerb);
         return true;
     }
@@ -155,7 +155,7 @@ bool HerbHandler::EditHerb(int rowID, std::string newName, std::string newCatego
 {
     Herb editedHerb(rowID, newName, newCategory, newCurrentStockTotal, Money(newCostPerGram), newPreferredSupplier);
 
-    if (herbDBHandler.EditHerbInDB(editedHerb)) {
+    if (DBHandler::GetInstance().EditHerbInDB(editedHerb)) {
         if (!herbList.empty()) {
             herbList[rowID - 1] = editedHerb;
         }
@@ -167,7 +167,7 @@ bool HerbHandler::EditHerb(int rowID, std::string newName, std::string newCatego
 
 bool HerbHandler::DeleteHerb(int rowID)
 {
-    if (herbDBHandler.DeleteHerbFromDB(rowID)) {
+    if (DBHandler::GetInstance().DeleteHerbFromDB(rowID)) {
         if (rowID >= 0 && rowID < herbList.size()) {
             herbList.erase(herbList.begin() + rowID);
         }

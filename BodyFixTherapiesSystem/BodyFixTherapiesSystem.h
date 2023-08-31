@@ -4,6 +4,9 @@
 #include <iostream>
 #include "ui_BodyFixTherapiesSystem.h"
 #include "HerbHandler.h"
+#include "FormulaHandler.h"
+
+class Formula;
 
 class BodyFixTherapiesSystem : public QWidget
 {
@@ -22,11 +25,20 @@ private slots:
     void QuitApp();
 
     // slots for manage herbs
+    void SearchAndSortMHTable();
     void GoToAddHerb();
     void GoToEditHerb();
-    void UpdateMHTable(std::vector<Herb>* herbList);
-    void SearchAndFilterMHTable();
-    //void ResetMHTable();
+
+    // slots for manage formulas
+    void GoToCreateFormula();
+    void GoToEditFormula();
+
+    // slots for create formula
+    void SearchAndSortCFAllHerbsTable();
+    void AddHerbToFormula();
+    void RemoveHerbFromFormula();
+    void FinishFormula();
+    void AbandonFormula();
 
     // slots used by multiple pages
     void GoToMainMenu();
@@ -37,9 +49,23 @@ private:
     // manage herb properties and functions
     HerbHandler herbHandler;
     std::vector<Herb>* fullHerbList;
-    std::vector<Herb>* currentHerbListInTable;
+    std::vector<Herb>* currentHerbListInMHTable;
     int editHerbID;
+    void UpdateHerbTable(std::vector<Herb>* herbList, QTableWidget* table);
     void AddHerb();
     void EditHerb();
     void DeleteHerb();
+
+    // manage formula properties and functions
+    FormulaHandler formulaHandler;
+    std::vector<Formula>* fullFormulaList;
+    std::vector<Formula>* currentFormulaListInMFTable;
+    int editFormulaID;
+    void UpdateMFTable(std::vector<Formula>* formulaList);
+    void EditFormula();
+    void DeleteFormula();
+
+    // create formula properties and functions
+    std::vector<Herb>* currentHerbListInCFAllHerbsTable;
+    void UpdateHerbCostsInCreateFormula();
 };

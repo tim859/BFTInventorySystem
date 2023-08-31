@@ -45,7 +45,21 @@ Money::Money(long long int pounds, unsigned pence)
 }
 
 Money Money::operator+(const Money& other)
-// Adds this and other, checking for overflow and underflow
+{
+    long long int totalMills = mills + other.mills;
+
+    if (totalMills > maxMoney) {
+        throw std::overflow_error(overflowMessage);
+    }
+
+    if (totalMills < minMoney) {
+        throw std::underflow_error(underflowMessage);
+    }
+
+    return Money(totalMills, 0); // Using the constructor that directly takes mills
+}
+
+Money& Money::operator+=(const Money& other)
 {
 	if (mills > 0 && maxMoney - mills < other.mills) {
 		throw std::overflow_error(overflowMessage);
@@ -55,24 +69,42 @@ Money Money::operator+(const Money& other)
 		throw std::underflow_error(underflowMessage);
 	}
 
-	return Money(mills + other.mills);
+	mills += other.mills;
+	return *this; // Return a reference to the modified object
 }
 
 Money Money::operator-(const Money& other)
 // Subtracts other from this, checking for overflow and underflow
 {
-	if (mills > 0 && maxMoney - mills < -other.mills) {
+	long long int totalMills = mills - other.mills;
+
+	if (totalMills > maxMoney) {
 		throw std::overflow_error(overflowMessage);
 	}
 
-	if (mills < 0 && minMoney - mills > -other.mills) {
+	if (totalMills < minMoney) {
 		throw std::underflow_error(underflowMessage);
 	}
 
-	return Money(mills - other.mills);
+	return Money(totalMills, 0);
 }
 
-Money Money::operator<(const Money& other)
+Money Money::operator*(const int scalar)
+{
+	long long int totalMills = mills * scalar;
+
+	if (totalMills > maxMoney) {
+		throw std::overflow_error(overflowMessage);
+	}
+
+	if (totalMills < minMoney) {
+		throw std::underflow_error(underflowMessage);
+	}
+
+	return Money(totalMills, 0);
+}
+
+bool Money::operator<(const Money& other)
 {
 	return mills < other.mills;
 }
@@ -100,7 +132,7 @@ double Money::ToDouble()
 	return totalValue;
 }
 
-long long int Money::GetMills() { 
+const long long int Money::GetMills() { 
 	return mills; 
 }
 

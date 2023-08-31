@@ -46,10 +46,13 @@
     <ClCompile Include="HerbHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HerbDBHandler.cpp">
+    <ClCompile Include="Money.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Money.cpp">
+    <ClCompile Include="FormulaHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Herb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -63,10 +66,13 @@
     <ClInclude Include="HerbHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HerbDBHandler.h">
+    <ClInclude Include="Money.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Money.h">
+    <ClInclude Include="Formula.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FormulaHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

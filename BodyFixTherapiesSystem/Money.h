@@ -26,18 +26,21 @@ private:
 
 public:
 	Money();
-	// Constructor takes long long int initMills that will be used to represent mills internally. Passing in any int as a second argument will specify to the class that the first argument is an int for mills and not a double for pounds.
-	Money(long long int initMills, int dummyInt);
+	// Constructor takes the mills value so no calculation is really needed, just set mills to the value passed in. dummy string is just to differentiate between the pounds and pence constructor.
+	Money(long long int newMills, std::string anything);
 	// Constructor converts currency in decimal to currency in mills for internal representation and calculation
 	Money(long double pounds);
 	// Constructor converts currency in two seperate ints to currency in mills for internal representation and calculation
 	Money(long long int pounds, unsigned pence);
 
 	Money operator+(const Money&);
+	Money operator+(const long long int);
 	Money& operator+=(const Money&);
+	Money& operator+=(const long long int);
 	Money operator-(const Money&);
 	Money operator*(const int);
 	bool operator<(const Money&);
+	bool operator==(const Money);
 
 	// Returns GBP in format £XX.xx
 	std::string ToString();

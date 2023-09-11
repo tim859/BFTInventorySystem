@@ -13,9 +13,8 @@ Money::Money()
 	mills = 0;
 }
 
-Money::Money(long long int initMills, int dummyInt)
-{
-	mills = initMills;
+Money::Money(long long int newMills, std::string anything) {
+	mills = newMills;
 }
 
 Money::Money(long double pounds)
@@ -56,7 +55,23 @@ Money Money::operator+(const Money& other)
         throw std::underflow_error(underflowMessage);
     }
 
-    return Money(totalMills, 0); // Using the constructor that directly takes mills
+    return Money(totalMills, "anything"); // Using the constructor that directly takes mills
+}
+
+// adds an int (in mills) directly to the mills value. Do NOT have the last number as anything other than 0 or it will permanently mess the accuracy of the money object up.
+Money Money::operator+(const long long int other)
+{
+	long long int totalMills = mills + other;
+
+	if (totalMills > maxMoney) {
+		throw std::overflow_error(overflowMessage);
+	}
+
+	if (totalMills < minMoney) {
+		throw std::underflow_error(underflowMessage);
+	}
+
+	return Money(totalMills, "anything"); // Using the constructor that directly takes mills
 }
 
 Money& Money::operator+=(const Money& other)
@@ -73,6 +88,21 @@ Money& Money::operator+=(const Money& other)
 	return *this; // Return a reference to the modified object
 }
 
+// adds an int (in mills) directly to the mills value. Do NOT have the last number as anything other than 0 or it will permanently mess the accuracy of the money object up.
+Money& Money::operator+=(const long long int other)
+{
+	if (mills > 0 && maxMoney - mills < other) {
+		throw std::overflow_error(overflowMessage);
+	}
+
+	if (mills < 0 && minMoney - mills > other) {
+		throw std::underflow_error(underflowMessage);
+	}
+
+	mills += other;
+	return *this; // Return a reference to the modified object
+}
+
 Money Money::operator-(const Money& other)
 // Subtracts other from this, checking for overflow and underflow
 {
@@ -86,7 +116,7 @@ Money Money::operator-(const Money& other)
 		throw std::underflow_error(underflowMessage);
 	}
 
-	return Money(totalMills, 0);
+	return Money(totalMills, "anything");
 }
 
 Money Money::operator*(const int scalar)
@@ -101,12 +131,17 @@ Money Money::operator*(const int scalar)
 		throw std::underflow_error(underflowMessage);
 	}
 
-	return Money(totalMills, 0);
+	return Money(totalMills, "anything");
 }
 
 bool Money::operator<(const Money& other)
 {
 	return mills < other.mills;
+}
+
+bool Money::operator==(const Money other)
+{
+	return mills == other.mills;
 }
 
 std::string Money::ToString()

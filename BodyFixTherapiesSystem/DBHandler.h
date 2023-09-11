@@ -15,6 +15,7 @@ private:
 	QSqlDatabase db;
 	DBHandler(std::string connName);
 	~DBHandler();
+	std::string GetHerbsAndAmountsAsDBString(std::vector<Herb>* listOfHerbs, std::vector<int> listofHerbAmounts);
 
 public:
 	static DBHandler& GetInstance();
@@ -24,14 +25,14 @@ public:
 	bool AddHerbToDB(Herb newHerb);
 	bool EditHerbInDB(Herb editedHerb);
 	bool DeleteHerbFromDB(int rowID);
-	int GetRowsInHerbTable();
+	int GetRowIDOfLastRecordInHerbTable();
 
 	// formula functions
 	QSqlQuery GetAllFormulasFromDB();
 	QSqlQuery GetHerbFromDB(int rowID);
 	bool AddFormulaToDB(Formula newFormula);
-	/*bool EditFormulaInDB();
-	bool DeleteFormulaFromDB();*/
+	bool EditFormulaInDB(Formula editedFormula);
+	bool DeleteFormulaFromDB(int rowID);
 	int GetRowsInFormulaTable();
+	int GetRowIDOfLastRecordInFormulaTable();
 };
-

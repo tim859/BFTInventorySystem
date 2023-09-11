@@ -55,6 +55,9 @@
     <ClCompile Include="Herb.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Formula.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DBHandler.h">

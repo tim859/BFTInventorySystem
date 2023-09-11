@@ -1,17 +1,21 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "Money.h"
 #include "Herb.h"
 
 struct Formula {
 
-	Formula(int initID, std::string initPatientName, Money initCostOfHerbs, Money initCostToPatient, std::vector<Herb>* initListOfHerbs, std::vector<int> initListOfHerbAmounts)
-		: id(initID), patientName(initPatientName), costOfHerbs(initCostOfHerbs), costToPatient(initCostToPatient), listOfHerbs(initListOfHerbs), listOfHerbAmounts(initListOfHerbAmounts) {}
+	Formula() : rowID(0), patientName(""), listOfHerbs(new std::vector<Herb>), listOfHerbAmounts() {}
 
-	int id;
+	Formula(int initRowID, std::string initPatientName,std::vector<Herb>* initListOfHerbs, std::vector<int> initListOfHerbAmounts)
+		: rowID(initRowID), patientName(initPatientName),listOfHerbs(initListOfHerbs), listOfHerbAmounts(initListOfHerbAmounts) {}
+
+	int rowID;
 	std::string patientName;
-	Money costOfHerbs;
-	Money costToPatient;
 	std::vector<Herb>* listOfHerbs;
 	std::vector<int> listOfHerbAmounts;
+
+	bool operator== (Formula other);
+	friend std::ostream& operator<< (std::ostream& os, Formula& obj);
 };

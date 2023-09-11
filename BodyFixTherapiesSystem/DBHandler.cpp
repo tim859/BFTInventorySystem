@@ -23,6 +23,31 @@ DBHandler::~DBHandler()
     db.close();
 }
 
+std::string DBHandler::GetHerbsAndAmountsAsDBString(std::vector<Herb>* listOfHerbs, std::vector<int> listOfHerbAmounts)
+{
+    // check for empty list
+    if (listOfHerbs->empty() || listOfHerbAmounts.empty()) {
+        return "e";
+    }
+
+    // create string from list of herbs and list of amounts
+    std::string herbAndAmountString = "";
+    for (int i = 0; i < listOfHerbs->size(); i++) {
+        // get rowID of the ith herb in the list and convert it to a std::string
+        std::string herbRowID = std::to_string(static_cast<long long>((*listOfHerbs)[i].rowID));
+        // get amount of the ith herb in the list and convert it to a std::string
+        std::string herbAmount = std::to_string(static_cast<long long>(listOfHerbAmounts[i]));
+
+        // concatenate herb, amount and appropriate separators together and append the result to the overall string
+        herbAndAmountString += herbRowID + "-" + herbAmount + ",";
+    }
+
+    // replace last character (last character should be a comma at this point so needs to be replaced/got rid of anyway) of herbListString with e to denote end of string
+    herbAndAmountString[herbAndAmountString.size() - 1] = 'e';
+
+    return herbAndAmountString;
+}
+
 DBHandler& DBHandler::GetInstance() {
     if (!instance) {
         instance = new DBHandler("DBHandlerConn");
@@ -49,11 +74,11 @@ bool DBHandler::AddHerbToDB(Herb newHerb)
         "VALUES (:name, :category, :current_stock_total, :cost_per_gram, :preferred_supplier)");
 
     // bind values to placeholders
-    insertQuery.bindValue(0, QString::fromStdString(newHerb.name));
-    insertQuery.bindValue(1, QString::fromStdString(newHerb.category));
-    insertQuery.bindValue(2, newHerb.currentStockTotal);
-    insertQuery.bindValue(3, newHerb.costPerGram.GetMills());
-    insertQuery.bindValue(4, QString::fromStdString(newHerb.preferredSupplier));
+    insertQuery.bindValue(":name", QString::fromStdString(newHerb.name));
+    insertQuery.bindValue(":category", QString::fromStdString(newHerb.category));
+    insertQuery.bindValue(":current_stock_total", newHerb.currentStockTotal);
+    insertQuery.bindValue(":cost_per_gram", newHerb.costPerGram.ToDouble());
+    insertQuery.bindValue(":preferred_supplier", QString::fromStdString(newHerb.preferredSupplier));
 
     // execute the query and check for failure
     if (insertQuery.exec()) {
@@ -77,9 +102,9 @@ bool DBHandler::EditHerbInDB(Herb editedHerb)
     updateQuery.bindValue(":name", QString::fromStdString(editedHerb.name));
     updateQuery.bindValue(":category", QString::fromStdString(editedHerb.category));
     updateQuery.bindValue(":current_stock_total", editedHerb.currentStockTotal);
-    updateQuery.bindValue(":cost_per_gram", editedHerb.costPerGram.GetMills());
+    updateQuery.bindValue(":cost_per_gram", editedHerb.costPerGram.ToDouble());
     updateQuery.bindValue(":preferred_supplier", QString::fromStdString(editedHerb.preferredSupplier));
-    updateQuery.bindValue(":rowid", editedHerb.id);
+    updateQuery.bindValue(":rowid", editedHerb.rowID);
 
     if (updateQuery.exec()) {
         return true;
@@ -102,18 +127,19 @@ bool DBHandler::DeleteHerbFromDB(int rowID)
     return false;
 }
 
-int DBHandler::GetRowsInHerbTable()
+int DBHandler::GetRowIDOfLastRecordInHerbTable()
 {
-    QSqlQuery herbQuery(db);
-    herbQuery.prepare("SELECT COUNT(*) FROM herbs");
+    QSqlQuery selectQuery(db);
+    selectQuery.prepare("SELECT ROWID FROM herbs ORDER BY ROWID DESC LIMIT 1");
 
-    if (herbQuery.exec()) {
-        int rowCount = herbQuery.value(0).toInt();
-        return rowCount;
+    if (selectQuery.exec() && selectQuery.next()) {
+        int rowID = selectQuery.value(0).toInt();
+        return rowID;
     }
 
     return 0;
 }
+
 
 // ---------- formula functions ----------
 
@@ -152,28 +178,11 @@ QSqlQuery DBHandler::GetHerbFromDB(int rowID)
 bool DBHandler::AddFormulaToDB(Formula newFormula)
 {
     QSqlQuery insertQuery(db);
-    insertQuery.prepare("INSERT INTO formulas (patient_name, cost_of_herbs, cost_to_patient, list_of_herbs)"
-        "VALUES (:patient_name, :cost_of_herbs, :cost_to_patient, :list_of_herbs)");
+    insertQuery.prepare("INSERT INTO formulas (patient_name, list_of_herbs)"
+        "VALUES (:patient_name, :list_of_herbs)");
 
     insertQuery.bindValue(":patient_name", QString::fromStdString(newFormula.patientName));
-    insertQuery.bindValue(":cost_of_herbs", newFormula.costOfHerbs.GetMills());
-    insertQuery.bindValue(":cost_to_patient", newFormula.costToPatient.GetMills());
-
-    // create string from list of herbs and list of amounts
-    std::string herbAndAmountString = "";
-    for (int i = 0; i < newFormula.listOfHerbs->size(); i++) {
-        // get rowID of the ith herb in the list and convert it to a std::string
-        std::string herbRowID = std::to_string(static_cast<long long>((*newFormula.listOfHerbs)[i].id));
-        // get amount of the ith herb in the list and convert it to a std::string
-        std::string herbAmount = std::to_string(static_cast<long long>(newFormula.listOfHerbAmounts[i]));
-        
-        herbAndAmountString += herbRowID + "-" + herbAmount + ",";
-    }
-
-    // replace last character (last character should be a comma at this point) of herbListString with e to denote end of string
-    herbAndAmountString[herbAndAmountString.size() - 1] = 'e';
-
-    insertQuery.bindValue(":list_of_herbs", QString::fromStdString(herbAndAmountString));
+    insertQuery.bindValue(":list_of_herbs", QString::fromStdString(GetHerbsAndAmountsAsDBString(newFormula.listOfHerbs, newFormula.listOfHerbAmounts)));
 
     if (insertQuery.exec()) {
         return true;
@@ -183,14 +192,47 @@ bool DBHandler::AddFormulaToDB(Formula newFormula)
     return false;
 }
 
-int DBHandler::GetRowsInFormulaTable()
+bool DBHandler::EditFormulaInDB(Formula editedFormula)
+{
+    QSqlQuery updateQuery(db);
+    updateQuery.prepare("UPDATE formulas "
+        "SET patient_name = :patient_name, "
+        "   list_of_herbs = :list_of_herbs "
+        "WHERE rowid = :rowid");
+
+    updateQuery.bindValue(":patient_name", QString::fromStdString(editedFormula.patientName));
+    updateQuery.bindValue(":list_of_herbs", QString::fromStdString(GetHerbsAndAmountsAsDBString(editedFormula.listOfHerbs, editedFormula.listOfHerbAmounts)));
+    updateQuery.bindValue(":rowid", editedFormula.rowID);
+
+    if (updateQuery.exec()) {
+        return true;
+    }
+
+    std::cout << "SQL error: " << updateQuery.lastError().text().toStdString();
+    return false;
+}
+
+bool DBHandler::DeleteFormulaFromDB(int rowID)
+{
+    QSqlQuery deleteQuery(db);
+    deleteQuery.prepare("DELETE FROM formulas WHERE rowid = :rowid");
+    deleteQuery.bindValue(":rowid", rowID);
+
+    if (deleteQuery.exec()) {
+        return true;
+    }
+
+    return false;
+}
+
+int DBHandler::GetRowIDOfLastRecordInFormulaTable()
 {
     QSqlQuery selectQuery(db);
-    selectQuery.prepare("SELECT COUNT(*) FROM formulas");
+    selectQuery.prepare("SELECT ROWID FROM formulas ORDER BY ROWID DESC LIMIT 1");
 
-    if (selectQuery.exec()) {
-        int rowCount = selectQuery.value(0).toInt();
-        return rowCount;
+    if (selectQuery.exec() && selectQuery.next()) {
+        int rowID = selectQuery.value(0).toInt();
+        return rowID;
     }
 
     return 0;

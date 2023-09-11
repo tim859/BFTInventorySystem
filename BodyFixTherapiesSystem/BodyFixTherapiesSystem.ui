@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1537</width>
-    <height>919</height>
+    <width>1430</width>
+    <height>894</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QStackedWidget" name="gridStackedWidget">
      <property name="currentIndex">
-      <number>8</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="pageMainMenu">
       <layout class="QGridLayout" name="gridLayoutMain">
@@ -1710,9 +1710,9 @@
              </layout>
             </item>
             <item>
-             <widget class="QPushButton" name="btnEFFinishFormula">
+             <widget class="QPushButton" name="btnEFConfirmEditToFormula">
               <property name="text">
-               <string>Finish Formula</string>
+               <string>Confirm Edit to Formula</string>
               </property>
              </widget>
             </item>

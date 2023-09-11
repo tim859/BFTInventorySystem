@@ -2,10 +2,10 @@
 #include <qsqlquery.h>
 #include <qmessagebox.h>
 #include <QInputDialog>
+#include <regex>
 #include "BodyFixTherapiesSystem.h"
 #include "DBHandler.h"
 #include "Herb.h"
-#include "Formula.h"
 #include "Money.h"
 
 BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent)
@@ -30,6 +30,8 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     herbTableHeaderLabels << "Name" << "Category" << "Current Stock Level" << "Cost Per Gram" << "Preferred Supplier";
     QStringList formulaTableHeaderLabels;
     formulaTableHeaderLabels << "Patient Name" << "Cost of Herbs" << "Cost to Patient" << "List of Herbs in Formula";
+    QStringList herbAndAmount;
+    herbAndAmount << "Name" << "Amount";
 
     // connect ui buttons/signals to their respective functions/slots
     // ---------- main menu ----------
@@ -51,7 +53,6 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     //connect(ui.btnMHReset, &QPushButton::clicked, this, &BodyFixTherapiesSystem::ResetMHTable);
     connect(ui.tableMHHerbTable, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::GoToEditHerb);
     connect(ui.btnMHEditHerb, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToEditHerb);
-
     // set custom column labels for herb table in manage herbs
     ui.tableMHHerbTable->setHorizontalHeaderLabels(herbTableHeaderLabels);
 
@@ -66,35 +67,47 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
 
     // ---------- manage formulas ----------
     connect(ui.btnMFCreateNewFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToCreateFormula);
+    connect(ui.tableMFFormulaTable, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::GoToEditFormula);
     connect(ui.btnMFEditFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToEditFormula);
     connect(ui.btnMFBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToMainMenu);
-
     // set custom column labels for formula table in manage formulas
     ui.tableMFFormulaTable->setHorizontalHeaderLabels(formulaTableHeaderLabels);
 
     // ---------- create formula -----------
-    connect(ui.btnCFBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageFormulas);
     ui.comboBoxCFSort->addItems({ "- None -", "Name", "Category", "Current stock level", "Cost per gram", "Preferred supplier" });
-    connect(ui.comboBoxCFSort, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &BodyFixTherapiesSystem::SearchAndSortCFAllHerbsTable);
-    connect(ui.radioBtnCFAscending, &QRadioButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortCFAllHerbsTable);
-    connect(ui.radioBtnCFDescending, &QRadioButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortCFAllHerbsTable);
-    connect(ui.btnCFSearch, &QPushButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortCFAllHerbsTable);
-    connect(ui.lineEditCFSearch, &QLineEdit::returnPressed, this, &BodyFixTherapiesSystem::SearchAndSortCFAllHerbsTable);
+    connect(ui.comboBoxCFSort, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.radioBtnCFAscending, &QRadioButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.radioBtnCFDescending, &QRadioButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.btnCFSearch, &QPushButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.lineEditCFSearch, &QLineEdit::returnPressed, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
     connect(ui.tableCFHerbsInDatabase, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
     connect(ui.btnCFAddHerbToFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
     connect(ui.tableCFHerbsInFormula, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
     connect(ui.btnCFRemoveHerbFromFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
     connect(ui.btnCFFinishFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::FinishFormula);
     connect(ui.btnCFAbandonFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AbandonFormula);
-
+    connect(ui.btnCFBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::BackToManageFormulas);
     //set custom column labels for herb tables in create formula
     ui.tableCFHerbsInDatabase->setHorizontalHeaderLabels(herbTableHeaderLabels);
-    QStringList herbAndAmount;
-    herbAndAmount << "Name" << "Amount";
     ui.tableCFHerbsInFormula->setHorizontalHeaderLabels(herbAndAmount);
 
     // ---------- edit formula ----------
-    connect(ui.btnEFBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageFormulas);
+    ui.comboBoxEFSort->addItems({ "- None -", "Name", "Category", "Current stock level", "Cost per gram", "Preferred supplier" });
+    connect(ui.comboBoxEFSort, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.radioBtnEFAscending, &QRadioButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.radioBtnEFDescending, &QRadioButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.btnEFSearch, &QPushButton::clicked, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.lineEditEFSearch, &QLineEdit::returnPressed, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
+    connect(ui.tableEFHerbsInDatabase, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
+    connect(ui.btnEFAddHerbToFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
+    connect(ui.tableEFHerbsInFormula, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
+    connect(ui.btnEFRemoveHerbFromFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
+    connect(ui.btnEFConfirmEditToFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::ConfirmEditFormula);
+    connect(ui.btnEFDeleteFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::DeleteFormula);
+    connect(ui.btnEFBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::BackToManageFormulas);
+    //set custom column labels for herb tables in create formula
+    ui.tableEFHerbsInDatabase->setHorizontalHeaderLabels(herbTableHeaderLabels);
+    ui.tableEFHerbsInFormula->setHorizontalHeaderLabels(herbAndAmount);
 
     // ---------- manage suppliers ----------
 
@@ -105,13 +118,34 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     ui.tableMFFormulaTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui.tableCFHerbsInDatabase->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui.tableCFHerbsInFormula->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    GoToMainMenu();    
+    ui.tableEFHerbsInDatabase->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui.tableEFHerbsInFormula->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    GoToMainMenu();
 }
 
 BodyFixTherapiesSystem::~BodyFixTherapiesSystem()
 {}
 
-// ################################# Manage Herbs Functions ###################################################
+std::string BodyFixTherapiesSystem::GetCurrentPageName() {
+    return ui.gridStackedWidget->currentWidget()->objectName().toStdString();
+}
+
+// use regular expressions to check for valid stock amounts and money values
+
+bool BodyFixTherapiesSystem::CheckForValidStockAmount(const std::string& input) {
+    std::regex pattern("^[0-9]+$");
+    return std::regex_match(input, pattern);
+}
+
+bool BodyFixTherapiesSystem::CheckForValidMonetaryValue(const std::string& input)
+{
+    std::regex pattern("^\\d+\\.\\d{1,2}$");
+    return std::regex_match(input, pattern);
+}
+
+// ############################################################################################################################
+// ################################# Manage herbs functions ###################################################################
+// ############################################################################################################################
 
 void BodyFixTherapiesSystem::UpdateHerbTable(std::vector<Herb>* herbList, QTableWidget* herbTable) {
     herbTable->clearContents();
@@ -164,20 +198,14 @@ void BodyFixTherapiesSystem::SearchAndSortMHTable()
         filterType = 1;
     }
 
-    std::vector<Herb>* searchedAndFilteredHerbList = herbHandler.GetSearchedAndSortedHerbs(fullHerbList, ui.lineEditMHSearchBar->text().toStdString(), ui.comboBoxMHSort->currentIndex(), filterType);
+    std::vector<Herb>* searchedAndFilteredHerbList = herbHandler.GetSearchedAndSortedHerbs(herbHandler.GetAllHerbs(), ui.lineEditMHSearchBar->text().toStdString(), ui.comboBoxMHSort->currentIndex(), filterType);
     UpdateHerbTable(searchedAndFilteredHerbList, ui.tableMHHerbTable);
     currentHerbListInMHTable = searchedAndFilteredHerbList;
 }
 
 void BodyFixTherapiesSystem::AddHerb()
 {
-    // check for empty fields
-    if (ui.lineEditAHName->text().isEmpty() ||
-        ui.lineEditAHCategory->text().isEmpty() ||
-        ui.lineEditAHCurrentStockTotal->text().isEmpty() ||
-        ui.lineEditAHCostPerGram->text().isEmpty() ||
-        ui.lineEditAHPreferredSupplier->text().isEmpty()) {
-        QMessageBox::critical(this, "Error", "At least one field is empty");
+    if (!ValidateHerbInput()) {
         return;
     }
 
@@ -195,14 +223,8 @@ void BodyFixTherapiesSystem::AddHerb()
             ui.lineEditAHCurrentStockTotal->text().toInt(), 
             ui.lineEditAHCostPerGram->text().toDouble(), 
             ui.lineEditAHPreferredSupplier->text().toStdString())) {
-
+            GoToManageHerbs();
             QMessageBox::information(this, "Success", "Herb added to database successfully.");
-
-            ui.lineEditAHName->clear();
-            ui.lineEditAHCategory->clear();
-            ui.lineEditAHCurrentStockTotal->clear();
-            ui.lineEditAHCostPerGram->clear();
-            ui.lineEditAHPreferredSupplier->clear();
         }
         else {
             QMessageBox::critical(this, "Error", "Failed to add herb to database.");
@@ -212,13 +234,7 @@ void BodyFixTherapiesSystem::AddHerb()
 
 void BodyFixTherapiesSystem::EditHerb()
 {
-    // check for empty fields
-    if (ui.lineEditEHName->text().isEmpty() ||
-        ui.lineEditEHCategory->text().isEmpty() ||
-        ui.lineEditEHCurrentStockTotal->text().isEmpty() ||
-        ui.lineEditEHCostPerGram->text().isEmpty() ||
-        ui.lineEditEHPreferredSupplier->text().isEmpty()) {
-        QMessageBox::critical(this, "Error", "At least one field is empty");
+    if (!ValidateHerbInput()) {
         return;
     }
 
@@ -230,12 +246,12 @@ void BodyFixTherapiesSystem::EditHerb()
     int reply = confirmationBox.exec();
 
     if (reply == QMessageBox::Yes) {
-        if (herbHandler.EditHerb(editHerbID, ui.lineEditEHName->text().toStdString(),
+        if (herbHandler.EditHerb(editHerbRowID, ui.lineEditEHName->text().toStdString(),
             ui.lineEditEHCategory->text().toStdString(),
             ui.lineEditEHCurrentStockTotal->text().toInt(),
             ui.lineEditEHCostPerGram->text().toDouble(),
             ui.lineEditEHPreferredSupplier->text().toStdString())) {
-
+            GoToManageHerbs();
             QMessageBox::information(this, "Success", "Herb edited in database successfully.");
         }
         else {
@@ -254,7 +270,11 @@ void BodyFixTherapiesSystem::DeleteHerb()
     int reply = confirmationBox.exec();
 
     if (reply == QMessageBox::Yes) {
-        if (herbHandler.DeleteHerb(editHerbID)) {
+        if (herbHandler.DeleteHerb(editHerbRowID)) {
+            if (!formulaHandler.RemoveHerbFromFormulas(editHerbRowID)) {
+                QMessageBox::critical(this, "Error", "Herb was successfully deleted but formulas with the deleted herb in them were not successfully updated.");
+            }
+            GoToManageHerbs();
             QMessageBox::information(this, "Success", "Herb deleted from database successfully.");
         }
         else {
@@ -263,13 +283,72 @@ void BodyFixTherapiesSystem::DeleteHerb()
     }
 }
 
+void BodyFixTherapiesSystem::ClearHerbFields()
+{
+    ui.lineEditAHName->clear();
+    ui.lineEditAHCategory->clear();
+    ui.lineEditAHCurrentStockTotal->clear();
+    ui.lineEditAHCostPerGram->clear();
+    ui.lineEditAHPreferredSupplier->clear();
+}
+
+bool BodyFixTherapiesSystem::ValidateHerbInput()
+{
+    QLineEdit* lineEditName = nullptr;
+    QLineEdit* lineEditCategory = nullptr;
+    QLineEdit* lineEditCurrentStockTotal = nullptr;
+    QLineEdit* lineEditCostPerGram = nullptr;
+    QLineEdit* lineEditPreferredSupplier = nullptr;
+
+    if (GetCurrentPageName() == "pageAddHerb") {
+        lineEditName = ui.lineEditAHName;
+        lineEditCategory = ui.lineEditAHCategory;
+        lineEditCurrentStockTotal = ui.lineEditAHCurrentStockTotal;
+        lineEditCostPerGram = ui.lineEditAHCostPerGram;
+        lineEditPreferredSupplier = ui.lineEditAHPreferredSupplier;
+    }
+    else if (GetCurrentPageName() == "pageEditHerb") {
+        lineEditName = ui.lineEditEHName;
+        lineEditCategory = ui.lineEditEHCategory;
+        lineEditCurrentStockTotal = ui.lineEditEHCurrentStockTotal;
+        lineEditCostPerGram = ui.lineEditEHCostPerGram;
+        lineEditPreferredSupplier = ui.lineEditEHPreferredSupplier;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot validate herb input on this page.");
+        return false;
+    }
+
+    // check for empty fields
+    if (lineEditName->text().isEmpty() ||
+        lineEditCategory->text().isEmpty() ||
+        lineEditCurrentStockTotal->text().isEmpty() ||
+        lineEditCostPerGram->text().isEmpty() ||
+        lineEditPreferredSupplier->text().isEmpty()) {
+        QMessageBox::critical(this, "Error", "At least one field is empty.");
+        return false;
+    }
+
+    if (!CheckForValidStockAmount(lineEditCurrentStockTotal->text().toStdString())) {
+        QMessageBox::critical(this, "Error", "Please enter a valid stock amount.");
+        return false;
+    }
+
+    if (!CheckForValidMonetaryValue(lineEditCostPerGram->text().toStdString())) {
+        QMessageBox::critical(this, "Error", "Please enter a valid monetary value.");
+        return false;
+    }
+
+    return true;
+}
+
 // manage herbs navigation buttons
 
 void BodyFixTherapiesSystem::GoToManageHerbs() {
+    ClearHerbFields();
     ui.gridStackedWidget->setCurrentIndex(1);
-    fullHerbList = herbHandler.GetAllHerbs();
-    UpdateHerbTable(fullHerbList, ui.tableMHHerbTable);
-    currentHerbListInMHTable = fullHerbList;
+    UpdateHerbTable(herbHandler.GetAllHerbs(), ui.tableMHHerbTable);
+    currentHerbListInMHTable = herbHandler.GetAllHerbs();
 }
 
 void BodyFixTherapiesSystem::GoToEditHerb()
@@ -282,7 +361,7 @@ void BodyFixTherapiesSystem::GoToEditHerb()
     }
 
     Herb editHerb = (*currentHerbListInMHTable)[selectedRow];
-    editHerbID = editHerb.id;
+    editHerbRowID = editHerb.rowID;
 
     ui.gridStackedWidget->setCurrentIndex(6);
 
@@ -294,7 +373,9 @@ void BodyFixTherapiesSystem::GoToEditHerb()
     ui.lineEditEHPreferredSupplier->setText(QString::fromStdString(editHerb.preferredSupplier));
 }
 
-// ###################################### Manage Formulas functions #####################################################
+// ############################################################################################################################
+// ###################################### Manage formulas functions ###########################################################
+// ############################################################################################################################
 
 void BodyFixTherapiesSystem::UpdateMFTable(std::vector<Formula>* formulaList)
 {
@@ -315,11 +396,11 @@ void BodyFixTherapiesSystem::UpdateMFTable(std::vector<Formula>* formulaList)
                 break;
 
             case 1:
-                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem((*formulaList)[i].costOfHerbs.ToString().c_str()));
+                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem(formulaHandler.GetCostOfHerbsInFormula(i).ToString().c_str()));
                 break;
 
             case 2:
-                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem((*formulaList)[i].costToPatient.ToString().c_str()));
+                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem(formulaHandler.GetCostToPatientOfFormula(i).ToString().c_str()));
                 break;
 
             case 3:
@@ -345,93 +426,203 @@ void BodyFixTherapiesSystem::UpdateMFTable(std::vector<Formula>* formulaList)
     ui.tableMFFormulaTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     // resize columns to ensure no information is cut off by thin columns
     ui.tableMFFormulaTable->resizeColumnsToContents();
-
     currentFormulaListInMFTable = formulaList;
 }
 
 void BodyFixTherapiesSystem::GoToManageFormulas() {
+    ClearFormulaFields();
     ui.gridStackedWidget->setCurrentIndex(2);
     fullFormulaList = formulaHandler.GetAllFormulas();
     UpdateMFTable(fullFormulaList);
     currentFormulaListInMFTable = fullFormulaList;
 }
 
-void BodyFixTherapiesSystem::EditFormula()
-{
-}
-
-void BodyFixTherapiesSystem::DeleteFormula()
-{
-}
-
-
 // manage formulas navigation buttons
 
 void BodyFixTherapiesSystem::GoToCreateFormula()
 {
+    formulaHandler.SetLastDBAccurateFormula(Formula());
     ui.gridStackedWidget->setCurrentIndex(7);
-    fullHerbList = herbHandler.GetAllHerbs();
-    UpdateHerbTable(fullHerbList, ui.tableCFHerbsInDatabase);
-    currentHerbListInCFAllHerbsTable = fullHerbList;
+    UpdateHerbTable(herbHandler.GetAllHerbs(), ui.tableCFHerbsInDatabase);
+    currentHerbListInCFAllHerbsTable = herbHandler.GetAllHerbs();
+    formulaHandler.ClearHerbsFromActiveFormula();
 }
 
 void BodyFixTherapiesSystem::GoToEditFormula()
 {
+    int selectedRow = ui.tableMFFormulaTable->currentRow();
+
+    if (selectedRow < 0) {
+        QMessageBox::critical(this, "Error", "No formula selected for editing.");
+        return;
+    }
+
+    Formula editFormula = (*currentFormulaListInMFTable)[selectedRow];
+    formulaHandler.SetLastDBAccurateFormula(editFormula);
     ui.gridStackedWidget->setCurrentIndex(8);
+
+    // populate edit formula page with formula information
+    ui.lineEditEFPatientName->setText(QString::fromStdString(editFormula.patientName));
+    std::string costOfHerbs = "Cost of Herbs: " + ui.tableMFFormulaTable->item(selectedRow, 1)->text().toStdString();
+    ui.lblEFCostOfHerbs->setText(QString::fromStdString(costOfHerbs));
+    std::string costToPatient = "Cost to Patient: " + ui.tableMFFormulaTable->item(selectedRow, 2)->text().toStdString();
+    ui.lblEFCostToPatient->setText(QString::fromStdString(costToPatient));
+
+    formulaHandler.ClearHerbsFromActiveFormula();
+    // add herbs in formula to be edited, to the formula table in edit formula and then to the list in formulaHandler to ensure they can be propely dealt with
+    for (int i = 0; i < editFormula.listOfHerbs->size(); i++) {
+        int newRow = ui.tableEFHerbsInFormula->rowCount();
+        ui.tableEFHerbsInFormula->insertRow(newRow);
+
+        ui.tableEFHerbsInFormula->setItem(newRow, 0, new QTableWidgetItem((*editFormula.listOfHerbs)[i].name.c_str()));
+
+        std::string herbAmount = std::to_string(editFormula.listOfHerbAmounts[i]) + "g";
+        ui.tableEFHerbsInFormula->setItem(newRow, 1, new QTableWidgetItem(herbAmount.c_str()));
+
+        formulaHandler.AddHerbToActiveFormula((*editFormula.listOfHerbs)[i], editFormula.listOfHerbAmounts[i]);
+    }
+    // make contents of table fill up the entire table space horizontally
+    ui.tableEFHerbsInFormula->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    // resize columns to ensure no information is cut off by thin columns
+    ui.tableEFHerbsInFormula->resizeColumnsToContents();
+
+    // update herbs in database table in edit formula
+    UpdateHerbTable(herbHandler.GetAllHerbs(), ui.tableEFHerbsInDatabase);
+    currentHerbListInEFAllHerbsTable = herbHandler.GetAllHerbs();
 }
 
-// ###################################### create formula functions ###########################################
+// ############################################################################################################################
+// ###################################### Create formula and edit formula functions ###########################################
+// ############################################################################################################################
 
-void BodyFixTherapiesSystem::SearchAndSortCFAllHerbsTable() {
+
+void BodyFixTherapiesSystem::SearchAndSortAllHerbsTable() {
     int filterType = 0;
-    if (ui.radioBtnCFDescending->isChecked()) {
+    // define pointers to all the ui widgets that will be used in the function
+    QTableWidget* herbTable = nullptr;
+    QLineEdit* searchLineEdit = nullptr;
+    QRadioButton* descendingRadioBtn = nullptr;
+    QComboBox* sortComboBox = nullptr;
+    std::vector<Herb>* currentHerbListinAllHerbsTable;
+
+    // assign pointers to all the relevant ui widgets based on the page that we are on
+    // this exact process is done in every other function for the create/edit formula functionality
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        herbTable = ui.tableCFHerbsInDatabase;
+        searchLineEdit = ui.lineEditCFSearch;
+        descendingRadioBtn = ui.radioBtnCFDescending;
+        sortComboBox = ui.comboBoxCFSort;
+        currentHerbListinAllHerbsTable = currentHerbListInCFAllHerbsTable;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        herbTable = ui.tableEFHerbsInDatabase;
+        searchLineEdit = ui.lineEditEFSearch;
+        descendingRadioBtn = ui.radioBtnEFDescending;
+        sortComboBox = ui.comboBoxEFSort;
+        currentHerbListinAllHerbsTable = currentHerbListInEFAllHerbsTable;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot search and sort a herb table on this page");
+        return;
+    }
+
+    if (descendingRadioBtn->isChecked()) {
         filterType = 1;
     }
 
-    std::vector<Herb>* searchedAndFilteredHerbList = herbHandler.GetSearchedAndSortedHerbs(fullHerbList, ui.lineEditCFSearch->text().toStdString(), ui.comboBoxCFSort->currentIndex(), filterType);
-    UpdateHerbTable(searchedAndFilteredHerbList, ui.tableCFHerbsInDatabase);
-    currentHerbListInCFAllHerbsTable = searchedAndFilteredHerbList;
+    std::vector<Herb>* searchedAndFilteredHerbList = herbHandler.GetSearchedAndSortedHerbs(herbHandler.GetAllHerbs(), searchLineEdit->text().toStdString(), sortComboBox->currentIndex(), filterType);
+    UpdateHerbTable(searchedAndFilteredHerbList, herbTable);
+
+    currentHerbListinAllHerbsTable = searchedAndFilteredHerbList;
 }
+
 
 void BodyFixTherapiesSystem::AddHerbToFormula()
 {
-    int selectedRow = ui.tableCFHerbsInDatabase->currentRow();
+    // TODO: quality of life fix - check for duplicate herbs already in the table and simply update the quantity of the already existing herb rather than having another of the same herb in the list
+
+    QTableWidget* tableHerbsInDatabase = nullptr;
+    QTableWidget* tableHerbsInFormula = nullptr;
+    std::vector<Herb>* currentHerbListInAllHerbsTable = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        tableHerbsInDatabase = ui.tableCFHerbsInDatabase;
+        tableHerbsInFormula = ui.tableCFHerbsInFormula;
+        currentHerbListInAllHerbsTable = currentHerbListInCFAllHerbsTable;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        tableHerbsInDatabase = ui.tableEFHerbsInDatabase;
+        tableHerbsInFormula = ui.tableEFHerbsInFormula;
+        currentHerbListInAllHerbsTable = currentHerbListInEFAllHerbsTable;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot add a herb to a formula on this page");
+        return;
+    }
+
+    int selectedRow = tableHerbsInDatabase->currentRow();
 
     if (selectedRow < 0) {
         QMessageBox::critical(this, "Error", "No herb selected to add to formula.");
         return;
     }
 
-    Herb formulaHerb = (*currentHerbListInCFAllHerbsTable)[selectedRow];
+    Herb formulaHerb = (*currentHerbListInAllHerbsTable)[selectedRow];
 
+    // get amount of herb to be used in grams and store it in inputValue
     bool ok;
-    int inputValue = QInputDialog::getInt(ui.pageCreateFormula,
+    int inputValue = QInputDialog::getInt(this,
         "Amount needed",
         // default value, min value, max value, step value
-        "Please enter the amount of the herb you are using, in grams:", 0, 0, 1000, 1, &ok);
+        "Please enter the amount of the herb you are using, in grams:", 1, 1, 1000, 1, &ok);
 
     if (ok) {
-        int newRow = ui.tableCFHerbsInFormula->rowCount();
-        ui.tableCFHerbsInFormula->insertRow(newRow);
+        // check for duplicate herb built in to AddHerbToFormula function
+        if (formulaHandler.AddHerbToActiveFormula(formulaHerb, inputValue)) {
+            // check returns true - herb was not in formula already
+            int newRow = tableHerbsInFormula->rowCount();
+            tableHerbsInFormula->insertRow(newRow);
 
-        ui.tableCFHerbsInFormula->setItem(newRow, 0, new QTableWidgetItem(formulaHerb.name.c_str()));
+            tableHerbsInFormula->setItem(newRow, 0, new QTableWidgetItem(formulaHerb.name.c_str()));
 
-        std::string herbAmount = std::to_string(inputValue) + "g";
-        ui.tableCFHerbsInFormula->setItem(newRow, 1, new QTableWidgetItem(herbAmount.c_str()));
+            std::string herbAmount = std::to_string(inputValue) + "g";
+            tableHerbsInFormula->setItem(newRow, 1, new QTableWidgetItem(herbAmount.c_str()));
 
-        // make contents of table fill up the entire table space horizontally
-        ui.tableCFHerbsInFormula->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-        // resize columns to ensure no information is cut off by thin columns
-        ui.tableCFHerbsInFormula->resizeColumnsToContents();
-
-        formulaHandler.AddHerbToFormula(formulaHerb, inputValue);
-        UpdateHerbCostsInCreateFormula();
+            // make contents of table fill up the entire table space horizontally
+            tableHerbsInFormula->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+            // resize columns to ensure no information is cut off by thin columns
+            tableHerbsInFormula->resizeColumnsToContents();
+        }
+        else {
+            // check returns false - herb was already in formula and has had its quantity updated - now needs to be updated in the table as well
+            std::vector<Herb>* currentHerbsInFormula = formulaHandler.GetHerbsInActiveFormula();
+            for (int i = 0; i < currentHerbsInFormula->size(); i++) {
+                if ((*currentHerbsInFormula)[i].rowID == formulaHerb.rowID) {
+                    std::string herbAmount = std::to_string(formulaHandler.GetHerbAmountsInActiveFormula()[i]) + "g";
+                    ui.tableEFHerbsInFormula->setItem(i, 1, new QTableWidgetItem(herbAmount.c_str()));
+                }
+            }
+        }
+        UpdateHerbCosts();
     }
 }
 
 void BodyFixTherapiesSystem::RemoveHerbFromFormula()
 {
-    int selectedRow = ui.tableCFHerbsInFormula->currentRow();
+    QTableWidget* tableHerbsInFormula = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        tableHerbsInFormula = ui.tableCFHerbsInFormula;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        tableHerbsInFormula = ui.tableEFHerbsInFormula;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot remove a herb from a formula on this page");
+        return;
+    }
+
+    int selectedRow = tableHerbsInFormula->currentRow();
 
     if (selectedRow < 0) {
         QMessageBox::critical(this, "Error", "No herb selected to remove from formula.");
@@ -439,21 +630,143 @@ void BodyFixTherapiesSystem::RemoveHerbFromFormula()
     }
 
     // remove row from table (ui only)
-    ui.tableCFHerbsInFormula->removeRow(selectedRow);
+    tableHerbsInFormula->removeRow(selectedRow);
     // remove herb from list(s) stored in formulaHandler object
-    formulaHandler.RemoveHerbFromFormula(selectedRow);
+    formulaHandler.RemoveHerbFromActiveFormula(selectedRow);
     // update costs associated with the formula herb list
-    UpdateHerbCostsInCreateFormula();
+    UpdateHerbCosts();
 }
 
-void BodyFixTherapiesSystem::FinishFormula() {
-    // input validation - check for missing fields
-    if (ui.lineEditCFPatientName->text().isEmpty()) {
+void BodyFixTherapiesSystem::UpdateHerbCosts()
+{
+    QLabel* lblCostOfHerbs = nullptr;
+    QLabel* lblCostToPatient = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        lblCostOfHerbs = ui.lblCFCostOfHerbs;
+        lblCostToPatient = ui.lblCFCostToPatient;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        lblCostOfHerbs = ui.lblEFCostOfHerbs;
+        lblCostToPatient = ui.lblEFCostToPatient;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot update herb costs on this page");
+        return;
+    }
+
+    std::string costOfHerbs = "Cost of Herbs: " + formulaHandler.RecalculateCostOfHerbs().ToString();
+    std::string costToPatient = "Cost to Patient: " + formulaHandler.RecalculateCostToPatient().ToString();
+
+    lblCostOfHerbs->setText(QString::fromStdString(costOfHerbs));
+    lblCostToPatient->setText(QString::fromStdString(costToPatient));
+}
+
+void BodyFixTherapiesSystem::ClearFormulaFields()
+{
+    QLineEdit* lineEditPatientName = nullptr;
+    QTableWidget* tableHerbsInFormula = nullptr;
+    QLabel* lblCostOfHerbs = nullptr;
+    QLabel* lblCostToPatient = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        lineEditPatientName = ui.lineEditCFPatientName;
+        tableHerbsInFormula = ui.tableCFHerbsInFormula;
+        lblCostOfHerbs = ui.lblCFCostOfHerbs;
+        lblCostToPatient = ui.lblCFCostToPatient;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        lineEditPatientName = ui.lineEditEFPatientName;
+        tableHerbsInFormula = ui.tableEFHerbsInFormula;
+        lblCostOfHerbs = ui.lblEFCostOfHerbs;
+        lblCostToPatient = ui.lblEFCostToPatient;
+    }
+    else {
+        return;
+    }
+
+    tableHerbsInFormula->clear();
+    tableHerbsInFormula->setRowCount(0);
+    lineEditPatientName->clear();
+    lblCostOfHerbs->setText("Cost of Herbs: \u00A300.00");
+    lblCostToPatient->setText("Cost to Patient: \u00A300.00");
+    formulaHandler.ClearHerbsFromActiveFormula();
+}
+
+bool BodyFixTherapiesSystem::CheckForChangesInFormula()
+{
+    QLineEdit* lineEditPatientName = nullptr;
+    QTableWidget* tableHerbsInFormula = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        lineEditPatientName = ui.lineEditCFPatientName;
+        tableHerbsInFormula = ui.tableCFHerbsInFormula;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        lineEditPatientName = ui.lineEditEFPatientName;
+        tableHerbsInFormula = ui.tableEFHerbsInFormula;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot check for changes in formula on this page");
+        return false;
+    }
+
+    // check for difference in patient name
+    if (formulaHandler.GetLastDBAccurateFormula().patientName != lineEditPatientName->text().toStdString()) {
+        return true;
+    }
+
+    // check for difference in the amount of herbs/herb amounts in the table
+    if (formulaHandler.GetLastDBAccurateFormula().listOfHerbs->size() != tableHerbsInFormula->rowCount() ||
+        formulaHandler.GetLastDBAccurateFormula().listOfHerbAmounts.size() != tableHerbsInFormula->rowCount()) {
+        return true;
+    }
+
+    // check for difference in the values of the herb names and amounts
+    for (int i = 0; i < tableHerbsInFormula->rowCount(); i++) {
+
+        // remove the g suffix from the herb amount so it can be compared as an int
+        std::string herbAmountString = tableHerbsInFormula->item(i, 1)->text().toStdString();
+        herbAmountString.resize(herbAmountString.size() - 1);
+        int herbAmountValue = std::stoi(herbAmountString);
+
+        if ((*formulaHandler.GetLastDBAccurateFormula().listOfHerbs)[i].name != tableHerbsInFormula->item(i, 0)->text().toStdString() ||
+            formulaHandler.GetLastDBAccurateFormula().listOfHerbAmounts[i] != herbAmountValue) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void BodyFixTherapiesSystem::BackToManageFormulas()
+{
+    if (CheckForChangesInFormula()) {
+        QMessageBox::critical(this, "Error", "Formula has unsaved changes, please either confirm and save your changes or abandon them before going back.");
+        return;
+    }
+
+    GoToManageFormulas();
+}
+
+// ############################################################################################################################
+// ####################################### Create formula functions only ######################################################
+// ############################################################################################################################
+
+void BodyFixTherapiesSystem::FinishFormula()
+{
+    // left it like this in case this function is used for multiple pages in the future
+    QLineEdit* lineEditPatientName = ui.lineEditCFPatientName;
+    QTableWidget* tableHerbsInFormula = ui.tableCFHerbsInFormula;
+    QLabel* lblCostOfHerbs = ui.lblCFCostOfHerbs;
+    QLabel* lblCostToPatient = ui.lblCFCostToPatient;
+
+    // input validation - check for empty fields
+    if (lineEditPatientName->text().isEmpty()) {
         QMessageBox::critical(this, "Error", "Please input patient name before finishing formula.");
         return;
     }
 
-    if (ui.tableCFHerbsInFormula->rowCount() <= 0) {
+    if (tableHerbsInFormula->rowCount() <= 0) {
         QMessageBox::critical(this, "Error", "Please input at least one herb before finishing formula.");
         return;
     }
@@ -468,14 +781,9 @@ void BodyFixTherapiesSystem::FinishFormula() {
     if (reply == QMessageBox::Yes) {
         Money costOfHerbs = formulaHandler.RecalculateCostOfHerbs();
         Money costToPatient = formulaHandler.RecalculateCostToPatient();
-        if (formulaHandler.AddFormula(ui.lineEditCFPatientName->text().toStdString(), costOfHerbs, costToPatient)) {
+        if (formulaHandler.AddFormula(lineEditPatientName->text().toStdString())) {
+            GoToManageFormulas();
             QMessageBox::information(this, "Success", "Formula successfully added to database.");
-            // clear lineedit and formula table as well as reset labels
-            ui.tableCFHerbsInFormula->clear();
-            ui.tableCFHerbsInFormula->setRowCount(0);
-            ui.lineEditCFPatientName->clear();
-            ui.lblCFCostOfHerbs->setText("Cost of Herbs: \u00A300.00");
-            ui.lblCFCostToPatient->setText("Cost to Patient: \u00A300.00");
         }
         else {
             QMessageBox::critical(this, "Error", "Failed to add formula to database.");
@@ -483,8 +791,15 @@ void BodyFixTherapiesSystem::FinishFormula() {
     }
 }
 
-void BodyFixTherapiesSystem::AbandonFormula() {
-    if (ui.lineEditCFPatientName->text().isEmpty() && ui.tableCFHerbsInFormula->rowCount() <= 0) {
+void BodyFixTherapiesSystem::AbandonFormula()
+{
+    QLineEdit* lineEditPatientName = ui.lineEditCFPatientName;
+    QTableWidget* tableHerbsInFormula = ui.tableCFHerbsInFormula;
+    QLabel* lblCostOfHerbs = ui.lblCFCostOfHerbs;
+    QLabel* lblCostToPatient = ui.lblCFCostToPatient;
+
+    // input validation - check for empty fields
+    if (lineEditPatientName->text().isEmpty() && tableHerbsInFormula->rowCount() <= 0) {
         QMessageBox::critical(this, "Error", "You may not abandon that which does not yet exist.");
         return;
     }
@@ -496,25 +811,82 @@ void BodyFixTherapiesSystem::AbandonFormula() {
     int reply = confirmationBox.exec();
 
     if (reply == QMessageBox::Yes) {
-        formulaHandler.ClearHerbsFromFormula();
-        ui.tableCFHerbsInFormula->clear();
-        ui.tableCFHerbsInFormula->setRowCount(0);
-        ui.lineEditCFPatientName->clear();
-        ui.lblCFCostOfHerbs->setText("Cost of Herbs: \u00A300.00");
-        ui.lblCFCostToPatient->setText("Cost to Patient: \u00A300.00");
+        GoToManageFormulas();
     }
 }
 
-void BodyFixTherapiesSystem::UpdateHerbCostsInCreateFormula()
-{
-    std::string costOfHerbs = "Cost of Herbs: " + formulaHandler.RecalculateCostOfHerbs().ToString();
-    std::string costToPatient = "Cost to Patient: " + formulaHandler.RecalculateCostToPatient().ToString();
+// ############################################################################################################################
+// ####################################### Edit formula functions only ########################################################
+// ############################################################################################################################
 
-    ui.lblCFCostOfHerbs->setText(QString::fromStdString(costOfHerbs));
-    ui.lblCFCostToPatient->setText(QString::fromStdString(costToPatient));
+void BodyFixTherapiesSystem::ConfirmEditFormula()
+{
+    QLineEdit* lineEditPatientName = ui.lineEditEFPatientName;
+    QTableWidget* tableHerbsInFormula = ui.tableEFHerbsInFormula;
+    QLabel* lblCostOfHerbs = ui.lblEFCostOfHerbs;
+    QLabel* lblCostToPatient = ui.lblEFCostToPatient;
+
+    // input validation - check for empty fields
+    if (lineEditPatientName->text().isEmpty()) {
+        QMessageBox::critical(this, "Error", "Please input patient name before confirming edit of formula.");
+        return;
+    }
+
+    if (tableHerbsInFormula->rowCount() <= 0) {
+        QMessageBox::critical(this, "Error", "Please input at least one herb before confirming edit of formula.");
+        return;
+    }
+
+    // if no changes have been made by the user then we don't want to make any changes to the database
+    if (!CheckForChangesInFormula()) {
+        QMessageBox::critical(this, "Error", "You cannot confirm editing the formula because no changes have been made yet.");
+        return;
+    }
+
+    // display a confirmation dialog
+    QMessageBox confirmationBox;
+    confirmationBox.setIcon(QMessageBox::Question);
+    confirmationBox.setText("Confirm editing the formula and change it in the database. Are you sure?");
+    confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    int reply = confirmationBox.exec();
+
+    if (reply == QMessageBox::Yes) {
+        Money costOfHerbs = formulaHandler.RecalculateCostOfHerbs();
+        Money costToPatient = formulaHandler.RecalculateCostToPatient();
+        if (formulaHandler.EditFormula(formulaHandler.GetLastDBAccurateFormula().rowID, lineEditPatientName->text().toStdString())) {
+            GoToManageFormulas();
+            QMessageBox::information(this, "Success", "Formula successfully edited in the database.");
+        }
+        else {
+            QMessageBox::critical(this, "Error", "Failed to edit formula in database.");
+        }
+    }
 }
 
-// ###################################### inline navigation buttons ###########################################
+void BodyFixTherapiesSystem::DeleteFormula()
+{
+    // display a confirmation dialog
+    QMessageBox confirmationBox;
+    confirmationBox.setIcon(QMessageBox::Question);
+    confirmationBox.setText("Delete the formula from the database, are you sure?");
+    confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    int reply = confirmationBox.exec();
+
+    if (reply == QMessageBox::Yes) {
+        if (formulaHandler.DeleteFormula()) {
+            GoToManageFormulas();
+            QMessageBox::information(this, "Success", "Formula deleted from database successfully.");
+        }
+        else {
+            QMessageBox::critical(this, "Error", "Failed to delete formula from database.");
+        }
+    }
+}
+
+// ############################################################################################################################
+// ###################################### Inline navigation buttons ###########################################################
+// ############################################################################################################################
+
 inline void BodyFixTherapiesSystem::GoToMainMenu() { ui.gridStackedWidget->setCurrentIndex(0); }
 inline void BodyFixTherapiesSystem::GoToManageSuppliers() { ui.gridStackedWidget->setCurrentIndex(3); }
 inline void BodyFixTherapiesSystem::GoToSettings() { ui.gridStackedWidget->setCurrentIndex(4); }

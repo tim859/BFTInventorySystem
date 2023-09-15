@@ -3,7 +3,6 @@
 #include "Money.h"
 
 struct Herb {
-    // TODO: change id to rowID
     Herb() : rowID(0), name(""), category(""), currentStockTotal(0), costPerGram(Money(0.0)), preferredSupplier("") {}
 
     Herb(int initRowID, std::string initName, std::string initCategory, int initCurrentStockTotal, Money initCostPerGram, std::string initPreferredSupplier)

@@ -61,9 +61,15 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     connect(ui.btnAHBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageHerbs);
 
     // ---------- edit herb ----------
+    connect(ui.btnEHEditStockOfHerb, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToEditHerbStock);
     connect(ui.btnEHEditHerbInDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::EditHerb);
     connect(ui.btnEHDeleteHerbFromDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::DeleteHerb);
     connect(ui.btnEHBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageHerbs);
+    
+    // ---------- edit herb stock ----------
+    connect(ui.btnESHAddStock, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddStockOfHerb);
+    connect(ui.btnESHReduceStock, &QPushButton::clicked, this, &BodyFixTherapiesSystem::ReduceStockOfHerb);
+    connect(ui.btnESHBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToEditHerb);
 
     // ---------- manage formulas ----------
     connect(ui.btnMFCreateNewFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToCreateFormula);
@@ -205,7 +211,23 @@ void BodyFixTherapiesSystem::SearchAndSortMHTable()
 
 void BodyFixTherapiesSystem::AddHerb()
 {
-    if (!ValidateHerbInput()) {
+    // check for empty fields
+    if (ui.lineEditAHName->text().isEmpty() ||
+        ui.lineEditAHCategory->text().isEmpty() ||
+        ui.lineEditAHPreferredSupplier->text().isEmpty()) {
+        QMessageBox::critical(this, "Error", "At least one field is empty.");
+        return;
+    }
+
+    // check for valid stock amount
+    if (!CheckForValidStockAmount(ui.lineEditAHCurrentStockTotal->text().toStdString())) {
+        QMessageBox::critical(this, "Error", "Please enter a valid stock amount.");
+        return;
+    }
+
+    // check for valid monetary value
+    if (!CheckForValidMonetaryValue(ui.lineEditAHCostPerGram->text().toStdString())) {
+        QMessageBox::critical(this, "Error", "Please enter a valid monetary value.");
         return;
     }
 
@@ -234,7 +256,10 @@ void BodyFixTherapiesSystem::AddHerb()
 
 void BodyFixTherapiesSystem::EditHerb()
 {
-    if (!ValidateHerbInput()) {
+    if (ui.lineEditAHName->text().isEmpty() ||
+        ui.lineEditAHCategory->text().isEmpty() ||
+        ui.lineEditAHPreferredSupplier->text().isEmpty()) {
+        QMessageBox::critical(this, "Error", "At least one field is empty.");
         return;
     }
 
@@ -246,10 +271,11 @@ void BodyFixTherapiesSystem::EditHerb()
     int reply = confirmationBox.exec();
 
     if (reply == QMessageBox::Yes) {
-        if (herbHandler.EditHerb(editHerbRowID, ui.lineEditEHName->text().toStdString(),
+        if (herbHandler.EditHerb(herbHandler.GetLastDBAccurateHerb().rowID,
+            ui.lineEditEHName->text().toStdString(),
             ui.lineEditEHCategory->text().toStdString(),
-            ui.lineEditEHCurrentStockTotal->text().toInt(),
-            ui.lineEditEHCostPerGram->text().toDouble(),
+            herbHandler.GetLastDBAccurateHerb().currentStockTotal, 
+            herbHandler.GetLastDBAccurateHerb().costPerGram,
             ui.lineEditEHPreferredSupplier->text().toStdString())) {
             GoToManageHerbs();
             QMessageBox::information(this, "Success", "Herb edited in database successfully.");
@@ -270,8 +296,8 @@ void BodyFixTherapiesSystem::DeleteHerb()
     int reply = confirmationBox.exec();
 
     if (reply == QMessageBox::Yes) {
-        if (herbHandler.DeleteHerb(editHerbRowID)) {
-            if (!formulaHandler.RemoveHerbFromFormulas(editHerbRowID)) {
+        if (herbHandler.DeleteHerb(herbHandler.GetLastDBAccurateHerb().rowID)) {
+            if (!formulaHandler.RemoveHerbFromFormulas(herbHandler.GetLastDBAccurateHerb().rowID)) {
                 QMessageBox::critical(this, "Error", "Herb was successfully deleted but formulas with the deleted herb in them were not successfully updated.");
             }
             GoToManageHerbs();
@@ -285,6 +311,7 @@ void BodyFixTherapiesSystem::DeleteHerb()
 
 void BodyFixTherapiesSystem::ClearHerbFields()
 {
+    // TODO: rework so it works with edit herb fields as well
     ui.lineEditAHName->clear();
     ui.lineEditAHCategory->clear();
     ui.lineEditAHCurrentStockTotal->clear();
@@ -292,61 +319,11 @@ void BodyFixTherapiesSystem::ClearHerbFields()
     ui.lineEditAHPreferredSupplier->clear();
 }
 
-bool BodyFixTherapiesSystem::ValidateHerbInput()
-{
-    QLineEdit* lineEditName = nullptr;
-    QLineEdit* lineEditCategory = nullptr;
-    QLineEdit* lineEditCurrentStockTotal = nullptr;
-    QLineEdit* lineEditCostPerGram = nullptr;
-    QLineEdit* lineEditPreferredSupplier = nullptr;
-
-    if (GetCurrentPageName() == "pageAddHerb") {
-        lineEditName = ui.lineEditAHName;
-        lineEditCategory = ui.lineEditAHCategory;
-        lineEditCurrentStockTotal = ui.lineEditAHCurrentStockTotal;
-        lineEditCostPerGram = ui.lineEditAHCostPerGram;
-        lineEditPreferredSupplier = ui.lineEditAHPreferredSupplier;
-    }
-    else if (GetCurrentPageName() == "pageEditHerb") {
-        lineEditName = ui.lineEditEHName;
-        lineEditCategory = ui.lineEditEHCategory;
-        lineEditCurrentStockTotal = ui.lineEditEHCurrentStockTotal;
-        lineEditCostPerGram = ui.lineEditEHCostPerGram;
-        lineEditPreferredSupplier = ui.lineEditEHPreferredSupplier;
-    }
-    else {
-        QMessageBox::critical(this, "Error", "Cannot validate herb input on this page.");
-        return false;
-    }
-
-    // check for empty fields
-    if (lineEditName->text().isEmpty() ||
-        lineEditCategory->text().isEmpty() ||
-        lineEditCurrentStockTotal->text().isEmpty() ||
-        lineEditCostPerGram->text().isEmpty() ||
-        lineEditPreferredSupplier->text().isEmpty()) {
-        QMessageBox::critical(this, "Error", "At least one field is empty.");
-        return false;
-    }
-
-    if (!CheckForValidStockAmount(lineEditCurrentStockTotal->text().toStdString())) {
-        QMessageBox::critical(this, "Error", "Please enter a valid stock amount.");
-        return false;
-    }
-
-    if (!CheckForValidMonetaryValue(lineEditCostPerGram->text().toStdString())) {
-        QMessageBox::critical(this, "Error", "Please enter a valid monetary value.");
-        return false;
-    }
-
-    return true;
-}
-
 // manage herbs navigation buttons
 
 void BodyFixTherapiesSystem::GoToManageHerbs() {
     ClearHerbFields();
-    ui.gridStackedWidget->setCurrentIndex(1);
+    ui.gridStackedWidget->setCurrentWidget(ui.pageManageHerbs);
     UpdateHerbTable(herbHandler.GetAllHerbs(), ui.tableMHHerbTable);
     currentHerbListInMHTable = herbHandler.GetAllHerbs();
 }
@@ -361,16 +338,82 @@ void BodyFixTherapiesSystem::GoToEditHerb()
     }
 
     Herb editHerb = (*currentHerbListInMHTable)[selectedRow];
-    editHerbRowID = editHerb.rowID;
+    herbHandler.SetLastDBAccurateHerb(editHerb);
 
-    ui.gridStackedWidget->setCurrentIndex(6);
+    ui.gridStackedWidget->setCurrentWidget(ui.pageEditHerb);
 
     // populate edit herb page with herb information
     ui.lineEditEHName->setText(QString::fromStdString(editHerb.name));
     ui.lineEditEHCategory->setText(QString::fromStdString(editHerb.category));
-    ui.lineEditEHCurrentStockTotal->setText(QString::number(editHerb.currentStockTotal));
-    ui.lineEditEHCostPerGram->setText(QString::number(editHerb.costPerGram.ToDouble()));
+    ui.lblEHCurrentStockTotal->setText(QString::fromStdString("Current Stock Total: " + std::to_string(editHerb.currentStockTotal)));
+    ui.lblEHCostPerGram->setText(QString::fromStdString("Average Cost Per Gram: " + editHerb.costPerGram.ToString()));
     ui.lineEditEHPreferredSupplier->setText(QString::fromStdString(editHerb.preferredSupplier));
+}
+
+// ############################################################################################################################
+// ###################################### Edit Herbs functions ################################################################
+// ############################################################################################################################
+
+void BodyFixTherapiesSystem::GoToEditHerbStock()
+{
+    ui.gridStackedWidget->setCurrentWidget(ui.pageEditHerbStock);
+
+    std::string currentStockTotal = "Current Stock Total: " + std::to_string(herbHandler.GetLastDBAccurateHerb().currentStockTotal) + "g";
+    std::string averageCostPerGram = "Average Cost Per Gram: " + herbHandler.GetLastDBAccurateHerb().costPerGram.ToString();
+    ui.lblESHCurrentStockTotal->setText(QString::fromStdString(currentStockTotal));
+    ui.lblESHAverageCostPerGram->setText(QString::fromStdString(averageCostPerGram));
+}
+
+void BodyFixTherapiesSystem::AddStockOfHerb()
+{
+    // get amount of herb to be used in grams and store it in inputValue
+    bool ok;
+    // default value, min value, max value, step value
+    int inputAmountValue = QInputDialog::getInt(this, "Amount needed", "Please enter the amount of the herb you are adding, in grams:", 1, 1, 10000, 1, &ok);
+    if (!ok) {
+        return;
+    }
+    // default value, min value, max value, number of decimal places
+    double inputCostPerGram = QInputDialog::getDouble(this, "Value needed", "Please enter the cost per gram of the amount:", 0.01, 0.01, 10000.0, 2, &ok);
+    if (!ok) {
+        return;
+    }
+
+    Herb editedHerb = herbHandler.AddStockOfHerb(herbHandler.GetLastDBAccurateHerb().rowID, inputAmountValue, inputCostPerGram);
+
+    // if AddStockOfHerb returns a Herb object with a rowid of 0, that means it failed to properly add the new stock of herb
+    // see AddStockOfHerb implementation for the reasons why this could happen
+    if (editedHerb.rowID != 0) {
+        // update stock level and average cost per gram and display success window
+        std::string currentStockTotal = "Current Stock Total: " + std::to_string(editedHerb.currentStockTotal) + "g";
+        std::string averageCostPerGram = "Average Cost Per Gram: " + editedHerb.costPerGram.ToString();
+        ui.lblESHCurrentStockTotal->setText(QString::fromStdString(currentStockTotal));
+        ui.lblESHAverageCostPerGram->setText(QString::fromStdString(averageCostPerGram));
+        QMessageBox::information(this, "Success", "Herb stock successfully updated.");
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Failed to update herb stock.");
+    }
+}
+
+void BodyFixTherapiesSystem::ReduceStockOfHerb()
+{
+    bool ok;
+    int inputAmountValue = QInputDialog::getInt(this, "Amount needed", "Please enter the amount you are reducing the herb by, in grams:", 1, 1, 10000, 1, &ok);
+    if (!ok) {
+        return;
+    }
+
+    Herb editedHerb = herbHandler.ReduceStockOfHerb(herbHandler.GetLastDBAccurateHerb().rowID, inputAmountValue);
+
+    if (editedHerb.rowID != 0) {
+        std::string currentStockTotal = "Current Stock Total: " + std::to_string(editedHerb.currentStockTotal) + "g";
+        ui.lblESHCurrentStockTotal->setText(QString::fromStdString(currentStockTotal));
+        QMessageBox::information(this, "Success", "Herb stock successfully updated.");
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Failed to update herb stock.");
+    }
 }
 
 // ############################################################################################################################
@@ -431,7 +474,7 @@ void BodyFixTherapiesSystem::UpdateMFTable(std::vector<Formula>* formulaList)
 
 void BodyFixTherapiesSystem::GoToManageFormulas() {
     ClearFormulaFields();
-    ui.gridStackedWidget->setCurrentIndex(2);
+    ui.gridStackedWidget->setCurrentWidget(ui.pageManageFormulas);
     fullFormulaList = formulaHandler.GetAllFormulas();
     UpdateMFTable(fullFormulaList);
     currentFormulaListInMFTable = fullFormulaList;
@@ -442,7 +485,7 @@ void BodyFixTherapiesSystem::GoToManageFormulas() {
 void BodyFixTherapiesSystem::GoToCreateFormula()
 {
     formulaHandler.SetLastDBAccurateFormula(Formula());
-    ui.gridStackedWidget->setCurrentIndex(7);
+    ui.gridStackedWidget->setCurrentWidget(ui.pageCreateFormula);
     UpdateHerbTable(herbHandler.GetAllHerbs(), ui.tableCFHerbsInDatabase);
     currentHerbListInCFAllHerbsTable = herbHandler.GetAllHerbs();
     formulaHandler.ClearHerbsFromActiveFormula();
@@ -459,7 +502,7 @@ void BodyFixTherapiesSystem::GoToEditFormula()
 
     Formula editFormula = (*currentFormulaListInMFTable)[selectedRow];
     formulaHandler.SetLastDBAccurateFormula(editFormula);
-    ui.gridStackedWidget->setCurrentIndex(8);
+    ui.gridStackedWidget->setCurrentWidget(ui.pageEditFormula);
 
     // populate edit formula page with formula information
     ui.lineEditEFPatientName->setText(QString::fromStdString(editFormula.patientName));
@@ -887,8 +930,8 @@ void BodyFixTherapiesSystem::DeleteFormula()
 // ###################################### Inline navigation buttons ###########################################################
 // ############################################################################################################################
 
-inline void BodyFixTherapiesSystem::GoToMainMenu() { ui.gridStackedWidget->setCurrentIndex(0); }
-inline void BodyFixTherapiesSystem::GoToManageSuppliers() { ui.gridStackedWidget->setCurrentIndex(3); }
-inline void BodyFixTherapiesSystem::GoToSettings() { ui.gridStackedWidget->setCurrentIndex(4); }
-inline void BodyFixTherapiesSystem::GoToAddHerb() { ui.gridStackedWidget->setCurrentIndex(5); }
+inline void BodyFixTherapiesSystem::GoToMainMenu() { ui.gridStackedWidget->setCurrentWidget(ui.pageMainMenu); }
+inline void BodyFixTherapiesSystem::GoToManageSuppliers() { ui.gridStackedWidget->setCurrentWidget(ui.pageManageSuppliers); }
+inline void BodyFixTherapiesSystem::GoToSettings() { ui.gridStackedWidget->setCurrentWidget(ui.pageSettings); }
+inline void BodyFixTherapiesSystem::GoToAddHerb() { ui.gridStackedWidget->setCurrentWidget(ui.pageAddHerb); }
 inline void BodyFixTherapiesSystem::QuitApp() { close(); }

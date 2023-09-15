@@ -134,6 +134,42 @@ Money Money::operator*(const int scalar)
 	return Money(totalMills, "anything");
 }
 
+Money Money::operator*(const Money& other)
+{
+	long long int resultMills = (mills * other.mills) / millsPerPenny;
+
+	if (resultMills > maxMoney) {
+		throw std::overflow_error(overflowMessage);
+	}
+
+	if (resultMills < minMoney) {
+		throw std::underflow_error(underflowMessage);
+	}
+
+	return Money(resultMills, "anything");
+}
+
+Money Money::operator/(const Money& other)
+{
+	if (other.mills == 0) {
+		throw std::runtime_error("Division by zero");
+	}
+
+	long long int resultMills = (mills * millsPerPenny) / other.mills;
+
+	if (resultMills > maxMoney) {
+		throw std::overflow_error(overflowMessage);
+	}
+
+	if (resultMills < minMoney) {
+		throw std::underflow_error(underflowMessage);
+	}
+
+	return Money(resultMills, "anything");
+}
+
+
+
 bool Money::operator<(const Money& other)
 {
 	return mills < other.mills;

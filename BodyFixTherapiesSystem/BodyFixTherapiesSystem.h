@@ -28,6 +28,11 @@ private slots:
     void GoToAddHerb();
     void GoToEditHerb();
 
+    // slots for edit herbs
+    void GoToEditHerbStock();
+    void AddStockOfHerb();
+    void ReduceStockOfHerb();
+
     // slots for manage formulas
     void GoToCreateFormula();
     void GoToEditFormula();
@@ -60,13 +65,11 @@ private:
     // manage herb properties and functions
     HerbHandler herbHandler;
     std::vector<Herb>* currentHerbListInMHTable;
-    int editHerbRowID;
     void UpdateHerbTable(std::vector<Herb>* herbList, QTableWidget* table);
     void AddHerb();
     void EditHerb();
     void DeleteHerb();
     void ClearHerbFields();
-    bool ValidateHerbInput();
 
     // manage formula properties and functions
     FormulaHandler formulaHandler;

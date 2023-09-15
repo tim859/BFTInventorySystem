@@ -1,5 +1,6 @@
 #include "HerbHandler.h"
 #include "Herb.h"
+#include "Money.h"
 #include <iostream>
 
 HerbHandler::HerbHandler()
@@ -15,6 +16,8 @@ HerbHandler::HerbHandler()
             Money(herbQuery.value(4).toDouble()),
             herbQuery.value(5).toString().toStdString()));
     }
+
+    lastDBAccurateHerb = Herb();
 }
 
 std::vector<Herb>* HerbHandler::GetAllHerbs() {
@@ -153,9 +156,9 @@ bool HerbHandler::AddHerb(std::string name, std::string category, int currentSto
     return false;
 }
 
-bool HerbHandler::EditHerb(int rowID, std::string newName, std::string newCategory, int newCurrentStockTotal, double newCostPerGram, std::string newPreferredSupplier)
+bool HerbHandler::EditHerb(int rowID, std::string newName, std::string newCategory, int newCurrentStockTotal, Money newCostPerGram, std::string newPreferredSupplier)
 {
-    Herb editedHerb(rowID, newName, newCategory, newCurrentStockTotal, Money(newCostPerGram), newPreferredSupplier);
+    Herb editedHerb(rowID, newName, newCategory, newCurrentStockTotal, newCostPerGram, newPreferredSupplier);
 
     // edit herb in database
     if (DBHandler::GetInstance().EditHerbInDB(editedHerb)) {
@@ -183,4 +186,83 @@ bool HerbHandler::DeleteHerb(int rowID)
         return true;
     } 
     return false;
+}
+
+Herb HerbHandler::AddStockOfHerb(int rowID, int addStockAmount, double addCostPerGram)
+{
+    Herb* editedHerb = nullptr;
+    for (int i = 0; i < herbList->size(); i++) {
+        if ((*herbList)[i].rowID == rowID) {
+            editedHerb = &(*herbList)[i];
+            break;
+        }
+    }
+
+    // editedHerb should hopefully never be null but the null check stops the ide complaining
+    if (editedHerb == nullptr) {
+        std::cout << "nullptr in AddStockOfHerb";
+        return Herb();
+    }
+
+    // weighted average cost per gram formula:     
+    // weightedPreviousCost = previousStock * previousAverageCostPerGram
+    // weightedNewCost = addedStockAmount * addedCostPerGram
+    // newTotalStock = previousStock + addedStockAmount
+    // newAverageCost = (weightedPreviousCost + weightedNewCost) / newTotalStock
+
+    // 1st test - example calculation with current stock of 750 at 0.5/gram and new amount of 250 at 1/gram:     
+    // 750 * 0.5 = 375
+    // 250 * 1 = 250
+    // 750 + 250 = 1000
+    //(375 + 250) / 1000 = 0.625 aka £0.62
+    // PASSED
+
+    // 2nd test - example calculation with current stock of 682 at 0.96/gram and new amount of 1333 at 1.43/gram:
+    // 682 * 0.96 = 654.72
+    // 1333 * 1.43 = 1906.19
+    // 682 + 1333 = 2015
+    // (654.72 + 1906.19) / 2015 = 1.270923077 aka £1.27
+    // PASSED
+
+    double weightedPreviousCost = editedHerb->costPerGram.ToDouble() * editedHerb->currentStockTotal;
+    double weightedNewCost = addStockAmount * addCostPerGram;
+    editedHerb->currentStockTotal += addStockAmount;
+    Money newWeightedAverageCost = Money((weightedPreviousCost + weightedNewCost) / editedHerb->currentStockTotal);
+    editedHerb->costPerGram = newWeightedAverageCost;
+
+    if (!DBHandler::GetInstance().EditHerbInDB(*editedHerb)) {
+        return Herb();
+    }
+
+    return *editedHerb;
+}
+
+Herb HerbHandler::ReduceStockOfHerb(int rowID, int reduceAmount)
+{
+    Herb* editedHerb = nullptr;
+    for (int i = 0; i < herbList->size(); i++) {
+        if ((*herbList)[i].rowID == rowID) {
+            editedHerb = &(*herbList)[i];
+            break;
+        }
+    }
+
+    if (editedHerb == nullptr) {
+        std::cout << "nullptr in ReduceStockOfHerb";
+        return Herb();
+    }
+
+    editedHerb->currentStockTotal -= reduceAmount;
+
+    return *editedHerb;
+}
+
+void HerbHandler::SetLastDBAccurateHerb(Herb newLastDBAccurateHerb)
+{
+    lastDBAccurateHerb = newLastDBAccurateHerb;
+}
+
+Herb HerbHandler::GetLastDBAccurateHerb()
+{
+    return lastDBAccurateHerb;
 }

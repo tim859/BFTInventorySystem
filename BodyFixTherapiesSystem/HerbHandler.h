@@ -2,8 +2,9 @@
 #include <vector>
 // the class will completely break if this include declaration is removed. no clue why but thats fine it can just be left here
 #include "DBHandler.h"
+#include "Herb.h"
 
-class Herb;
+class Money;
 
 class HerbHandler
 {
@@ -17,8 +18,12 @@ public:
 
 	std::vector<Herb>* GetSearchedAndSortedHerbs(std::vector<Herb>* herbListToBeSearchedAndSorted, std::string searchString, int index, int sortType);
 	bool AddHerb(std::string name, std::string category, int currentStockTotal, double costPerGram, std::string preferredSupplier);
-	bool EditHerb(int rowID, std::string newName, std::string newCategory, int newCurrentStockTotal, double newCostPerGram, std::string newPreferredSupplier);
+	bool EditHerb(int rowID, std::string newName, std::string newCategory, int newCurrentStockTotal, Money newCostPerGram, std::string newPreferredSupplier);
 	bool DeleteHerb(int rowID);
+	Herb AddStockOfHerb(int rowID, int addAmount, double addCostPerGram);
+	Herb ReduceStockOfHerb(int rowID, int reduceAmount);
+	void SetLastDBAccurateHerb(Herb newLastDBAccurateHerb);
+	Herb GetLastDBAccurateHerb();
 
 private:
 	// TODO: at the moment when we refresh a herb list, the steps are as follows:
@@ -36,4 +41,5 @@ private:
 	// there will be essentially no delay when refreshing a table instead of the current 1 second delay that there is with 1000 herbs.
 	// update: delay is caused by populating a QTableWidget with data instead of anything to do with the database. Still, it's good to optimise this as much as possible.
 	std::vector<Herb>* herbList;
+	Herb lastDBAccurateHerb;
 };

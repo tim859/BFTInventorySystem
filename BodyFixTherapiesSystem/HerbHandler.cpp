@@ -5,11 +5,11 @@
 
 HerbHandler::HerbHandler()
 {
-    herbList = new std::vector<Herb>;
+    activeHerbList = new std::vector<Herb>;
     QSqlQuery herbQuery = DBHandler::GetInstance().GetAllHerbsFromDB();
 
     while (herbQuery.next()) {
-        herbList->emplace_back(Herb(herbQuery.value(0).toInt(),
+        activeHerbList->emplace_back(Herb(herbQuery.value(0).toInt(),
             herbQuery.value(1).toString().toStdString(),
             herbQuery.value(2).toString().toStdString(),
             herbQuery.value(3).toInt(),
@@ -21,7 +21,7 @@ HerbHandler::HerbHandler()
 }
 
 std::vector<Herb>* HerbHandler::GetAllHerbs() {
-    return herbList;
+    return activeHerbList;
 }
 
 std::vector<Herb>* HerbHandler::GetSearchedHerbs(std::vector<Herb>* herbListToBeSearched, std::string searchString)
@@ -150,7 +150,7 @@ bool HerbHandler::AddHerb(std::string name, std::string category, int currentSto
         newHerb.rowID = DBHandler::GetInstance().GetRowIDOfLastRecordInHerbTable();
 
         // add herb to herb list
-        herbList->push_back(newHerb);
+        activeHerbList->push_back(newHerb);
         return true;
     }
     return false;
@@ -163,9 +163,24 @@ bool HerbHandler::EditHerb(int rowID, std::string newName, std::string newCatego
     // edit herb in database
     if (DBHandler::GetInstance().EditHerbInDB(editedHerb)) {
         // edit herb in herb list
-        for (int i = 0; i < herbList->size(); i++) {
-            if ((*herbList)[i].rowID == rowID) {
-                (*herbList)[i] = editedHerb;
+        for (int i = 0; i < activeHerbList->size(); i++) {
+            if ((*activeHerbList)[i].rowID == rowID) {
+                (*activeHerbList)[i] = editedHerb;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+bool HerbHandler::EditHerb(Herb editedHerb)
+{
+    // edit herb in database
+    if (DBHandler::GetInstance().EditHerbInDB(editedHerb)) {
+        // edit herb in herb list
+        for (int i = 0; i < activeHerbList->size(); i++) {
+            if ((*activeHerbList)[i].rowID == editedHerb.rowID) {
+                (*activeHerbList)[i] = editedHerb;
             }
         }
         return true;
@@ -178,9 +193,9 @@ bool HerbHandler::DeleteHerb(int rowID)
     // remove herb from database
     if (DBHandler::GetInstance().DeleteHerbFromDB(rowID)) {
         // remove herb from herb list
-        for (int i = 0; i < herbList->size(); i++) {
-            if ((*herbList)[i].rowID == rowID) {
-                herbList->erase(herbList->begin() + i);
+        for (int i = 0; i < activeHerbList->size(); i++) {
+            if ((*activeHerbList)[i].rowID == rowID) {
+                activeHerbList->erase(activeHerbList->begin() + i);
             }
         }
         return true;
@@ -191,9 +206,9 @@ bool HerbHandler::DeleteHerb(int rowID)
 Herb HerbHandler::AddStockOfHerb(int rowID, int addStockAmount, double addCostPerGram)
 {
     Herb* editedHerb = nullptr;
-    for (int i = 0; i < herbList->size(); i++) {
-        if ((*herbList)[i].rowID == rowID) {
-            editedHerb = &(*herbList)[i];
+    for (int i = 0; i < activeHerbList->size(); i++) {
+        if ((*activeHerbList)[i].rowID == rowID) {
+            editedHerb = &(*activeHerbList)[i];
             break;
         }
     }
@@ -230,25 +245,28 @@ Herb HerbHandler::AddStockOfHerb(int rowID, int addStockAmount, double addCostPe
     Money newWeightedAverageCost = Money((weightedPreviousCost + weightedNewCost) / editedHerb->currentStockTotal);
     editedHerb->costPerGram = newWeightedAverageCost;
 
-    if (!DBHandler::GetInstance().EditHerbInDB(*editedHerb)) {
-        return Herb();
-    }
-
     return *editedHerb;
 }
 
 Herb HerbHandler::ReduceStockOfHerb(int rowID, int reduceAmount)
 {
+    // finds the relevant herb in the active herb list
     Herb* editedHerb = nullptr;
-    for (int i = 0; i < herbList->size(); i++) {
-        if ((*herbList)[i].rowID == rowID) {
-            editedHerb = &(*herbList)[i];
+    for (int i = 0; i < activeHerbList->size(); i++) {
+        if ((*activeHerbList)[i].rowID == rowID) {
+            editedHerb = &(*activeHerbList)[i];
             break;
         }
     }
 
+    // checks for nullptr
     if (editedHerb == nullptr) {
         std::cout << "nullptr in ReduceStockOfHerb";
+        return Herb();
+    }
+
+    // checks for trying to reduce herb stock to less than 0
+    if (reduceAmount > editedHerb->currentStockTotal) {
         return Herb();
     }
 
@@ -265,4 +283,25 @@ void HerbHandler::SetLastDBAccurateHerb(Herb newLastDBAccurateHerb)
 Herb HerbHandler::GetLastDBAccurateHerb()
 {
     return lastDBAccurateHerb;
+}
+
+std::string HerbHandler::GetHexColourForStockAmount(int stockAmount)
+{
+    int veryLowOrNoStock = 200;
+    int lowStock = 500;
+    int mediumStock = 1000;
+    int highStock = 1500;
+
+    if (stockAmount <= veryLowOrNoStock) {
+        return "#ff0000";
+    }
+    else if (stockAmount <= lowStock) {
+        return "#ffa500";
+    }
+    else if (stockAmount <= mediumStock) {
+        return "#ffff00";
+    }
+    else {
+        return "#48b748";
+    }
 }

@@ -14,11 +14,10 @@ public:
 	bool AddFormula(std::string patientName);
 	bool EditFormula(int rowID, std::string newPatientName);
 	bool DeleteFormula();	
-	// return value specifies how add operation proceeded:
-	// returns true - herb was not in vector and has now been added
-	// returns false - herb was in vector and has had its quantity updated
-	bool AddHerbToActiveFormula(Herb formulaHerb, int formulaAmount);
+	void AddHerbToActiveFormula(Herb formulaHerb, int formulaAmount);
 	void RemoveHerbFromActiveFormula(int herbIndex);
+	void AddAmountToHerbInActiveFormula(int herbIndex, int herbChangeAmount);
+	void RemoveAmountOfHerbInActiveFormula(int herbIndex, int herbChangeAmount);
 	void ClearHerbsFromActiveFormula();
 	Money RecalculateCostOfHerbs();
 	Money RecalculateCostToPatient();
@@ -42,5 +41,6 @@ private:
 	// edit formula properties and functions
 	// formula that is used to see what changes have been made by the user
 	Formula lastDBAccurateFormula;
+
 };
 

@@ -17,7 +17,7 @@
    <item>
     <widget class="QStackedWidget" name="gridStackedWidget">
      <property name="currentIndex">
-      <number>6</number>
+      <number>5</number>
      </property>
      <widget class="QWidget" name="pageMainMenu">
       <layout class="QGridLayout" name="gridLayoutMain">
@@ -1091,7 +1091,7 @@
            <item>
             <widget class="QLabel" name="lblAHCostPerGram">
              <property name="text">
-              <string>Cost Per Gram: </string>
+              <string>Cost Per Gram: £</string>
              </property>
             </widget>
            </item>
@@ -1129,7 +1129,7 @@
            <item>
             <widget class="QLabel" name="lblAHCurrentStockTotal">
              <property name="text">
-              <string>Current Stock Total: </string>
+              <string>Current Stock Total in grams: </string>
              </property>
             </widget>
            </item>
@@ -1259,7 +1259,7 @@
            <item>
             <widget class="QLabel" name="lblEHCurrentStockTotal">
              <property name="text">
-              <string>Current Stock Total: </string>
+              <string>Current Stock Total:</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
@@ -1529,6 +1529,20 @@
               </property>
               <column/>
               <column/>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnCFAddAmountToHerbInFormula">
+              <property name="text">
+               <string>Add Amount to Herb in Formula</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnCFRemoveAmountFromHerbInFormula">
+              <property name="text">
+               <string>Remove Amount from Herb in Formula</string>
+              </property>
              </widget>
             </item>
             <item>
@@ -1802,6 +1816,20 @@
               </property>
               <column/>
               <column/>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnEFAddAmountToHerbInFormula">
+              <property name="text">
+               <string>Add Amount to Herb in Formula</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnEFRemoveAmountFromHerbInFormula">
+              <property name="text">
+               <string>Remove Amount from Herb in Formula</string>
+              </property>
              </widget>
             </item>
             <item>

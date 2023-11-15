@@ -19,14 +19,19 @@ public:
 	std::vector<Herb>* GetSearchedAndSortedHerbs(std::vector<Herb>* herbListToBeSearchedAndSorted, std::string searchString, int index, int sortType);
 	bool AddHerb(std::string name, std::string category, int currentStockTotal, double costPerGram, std::string preferredSupplier);
 	bool EditHerb(int rowID, std::string newName, std::string newCategory, int newCurrentStockTotal, Money newCostPerGram, std::string newPreferredSupplier);
+	bool EditHerb(Herb editedHerb);
 	bool DeleteHerb(int rowID);
+	/// <summary>
+	/// Increases currentStockTotal of the corresponding herb as well as calculating a new weighted average cost per gram of that herb
+	/// </summary>
 	Herb AddStockOfHerb(int rowID, int addAmount, double addCostPerGram);
 	Herb ReduceStockOfHerb(int rowID, int reduceAmount);
 	void SetLastDBAccurateHerb(Herb newLastDBAccurateHerb);
 	Herb GetLastDBAccurateHerb();
+	std::string GetHexColourForStockAmount(int stockAmount);
 
 private:
-	// TODO: at the moment when we refresh a herb list, the steps are as follows:
+	// previous method:
 	// 1. get all columns in all records from the herbs table
 	// 2. create a vector of herb objects based on this data
 	// 3. send that vector to the ui class to be presented in the table
@@ -40,6 +45,6 @@ private:
 	// 4. then, when the ui class requests an update of the herb info, we send a pointer to the freshly updated herbList. In this way, we don't need to be constantly pulling unnessecary info from the database.
 	// there will be essentially no delay when refreshing a table instead of the current 1 second delay that there is with 1000 herbs.
 	// update: delay is caused by populating a QTableWidget with data instead of anything to do with the database. Still, it's good to optimise this as much as possible.
-	std::vector<Herb>* herbList;
+	std::vector<Herb>* activeHerbList;
 	Herb lastDBAccurateHerb;
 };

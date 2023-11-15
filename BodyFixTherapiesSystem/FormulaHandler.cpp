@@ -81,48 +81,35 @@ Herb FormulaHandler::GetHerb(int rowID)
         herbQuery.value(4).toString().toStdString());
 }
 
-bool FormulaHandler::AddHerbToActiveFormula(Herb formulaHerb, int formulaAmount)
+void FormulaHandler::AddHerbToActiveFormula(Herb formulaHerb, int formulaAmount)
 {
-    // herb is duplicate and only needs its quantity updating - return false
+
+    // check for whether herb is already in formula
     for (int i = 0; i < herbsInActiveFormula->size(); i++) {
         if (formulaHerb == (*herbsInActiveFormula)[i]){
-            herbAmountsInActiveFormula[i] += formulaAmount;
-            return false;
+            AddAmountToHerbInActiveFormula(i, formulaAmount);
+            return;
         }
     }
-
-    // herb is not in formula list and needs to be added - return true
+    // add herb to active formula lists
     herbsInActiveFormula->push_back(formulaHerb);
     herbAmountsInActiveFormula.push_back(formulaAmount);
-    return true;
-
-    /*std::cout << "Herbs in current formula: ";
-    for (int i = 0; i < herbsInActiveFormula->size(); i++) {
-        std::cout << (*herbsInActiveFormula)[i] << ", ";
-    }
-
-    std::cout << "\nHerb amounts in current formula: ";
-    for (int i = 0; i < herbAmountsInActiveFormula.size(); i++) {
-        std::cout << herbAmountsInActiveFormula[i] << ", ";
-    }
-    std::cout << "\n";*/
 }
 
 void FormulaHandler::RemoveHerbFromActiveFormula(int herbIndex)
 {
     herbsInActiveFormula->erase(herbsInActiveFormula->begin() + herbIndex);
     herbAmountsInActiveFormula.erase(herbAmountsInActiveFormula.begin() + herbIndex);
+}
 
-    /*std::cout << "Herbs in current formula: ";
-    for (int i = 0; i < herbsInActiveFormula->size(); i++) {
-        std::cout << (*herbsInActiveFormula)[i] << ", ";
-    }
+void FormulaHandler::AddAmountToHerbInActiveFormula(int herbIndex, int herbChangeAmount)
+{
+    herbAmountsInActiveFormula[herbIndex] += herbChangeAmount;
+}
 
-    std::cout << "\nHerb amounts in current formula: ";
-    for (int i = 0; i < herbAmountsInActiveFormula.size(); i++) {
-        std::cout << herbAmountsInActiveFormula[i] << ", ";
-    }
-    std::cout << "\n";*/
+void FormulaHandler::RemoveAmountOfHerbInActiveFormula(int herbIndex, int herbChangeAmount)
+{
+    herbAmountsInActiveFormula[herbIndex] -= herbChangeAmount;
 }
 
 void FormulaHandler::ClearHerbsFromActiveFormula()
@@ -143,6 +130,7 @@ bool FormulaHandler::AddFormula(std::string patientName)
 
         // add formula to formula list
         formulaList.push_back(newFormula);
+
         ClearHerbsFromActiveFormula();
         return true;
     }

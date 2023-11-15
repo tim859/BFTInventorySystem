@@ -27,11 +27,13 @@ private slots:
     void SearchAndSortMHTable();
     void GoToAddHerb();
     void GoToEditHerb();
+    void BackFromAddHerb();
 
     // slots for edit herbs
     void GoToEditHerbStock();
     void AddStockOfHerb();
     void ReduceStockOfHerb();
+    void BackFromEditHerb();
 
     // slots for manage formulas
     void GoToCreateFormula();
@@ -43,6 +45,9 @@ private slots:
     void RemoveHerbFromFormula();
     void FinishFormula();
     void BackToManageFormulas();
+    void AddAmountToHerbInFormula();
+    void RemoveAmountFromHerbInFormula();
+    void BackFromEditFormula();
 
     // slots for create formula only
     void AbandonFormula();
@@ -70,6 +75,7 @@ private:
     void EditHerb();
     void DeleteHerb();
     void ClearHerbFields();
+    bool CheckForChangesInHerb();
 
     // manage formula properties and functions
     FormulaHandler formulaHandler;
@@ -78,9 +84,14 @@ private:
     void UpdateMFTable(std::vector<Formula>* formulaList);
 
     // create formula and edit formula properties and functions
+    std::vector<Herb> herbsToBeEdited; // herbs that have had their stock changed in the active herb list but should only have changes commmited to the db when the user commits those changes
     bool CheckForChangesInFormula();
     void ClearFormulaFields();
     void UpdateHerbCosts();
+    /// <summary>
+    /// Sets contents of a herbs-in-formula table to the herb names and amounts currently stored in the active formula lists contained within formulaHandler
+    /// </summary>
+    void UpdateHerbsInFormulaTable();
 
     // create formula properties and functions
     std::vector<Herb>* currentHerbListInCFAllHerbsTable;

@@ -1,7 +1,6 @@
 #include "Formula.h"
 #include <iostream>
 
-// TODO: not working, need to fix
 bool Formula::operator==(Formula other)
 {
     if (rowID == other.rowID ||

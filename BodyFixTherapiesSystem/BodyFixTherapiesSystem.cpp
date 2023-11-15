@@ -58,13 +58,13 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
 
     // ---------- add herb ----------
     connect(ui.btnAHAddHerbToDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddHerb);
-    connect(ui.btnAHBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageHerbs);
+    connect(ui.btnAHBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::BackFromAddHerb);
 
     // ---------- edit herb ----------
     connect(ui.btnEHEditStockOfHerb, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToEditHerbStock);
     connect(ui.btnEHEditHerbInDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::EditHerb);
     connect(ui.btnEHDeleteHerbFromDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::DeleteHerb);
-    connect(ui.btnEHBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageHerbs);
+    connect(ui.btnEHBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::BackFromEditHerb);
     
     // ---------- edit herb stock ----------
     connect(ui.btnESHAddStock, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddStockOfHerb);
@@ -88,7 +88,9 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     connect(ui.lineEditCFSearch, &QLineEdit::returnPressed, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
     connect(ui.tableCFHerbsInDatabase, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
     connect(ui.btnCFAddHerbToFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
-    connect(ui.tableCFHerbsInFormula, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
+    connect(ui.tableCFHerbsInFormula, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::AddAmountToHerbInFormula);
+    connect(ui.btnCFAddAmountToHerbInFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddAmountToHerbInFormula);
+    connect(ui.btnCFRemoveAmountFromHerbInFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::RemoveAmountFromHerbInFormula);
     connect(ui.btnCFRemoveHerbFromFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
     connect(ui.btnCFFinishFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::FinishFormula);
     connect(ui.btnCFAbandonFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AbandonFormula);
@@ -106,11 +108,13 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     connect(ui.lineEditEFSearch, &QLineEdit::returnPressed, this, &BodyFixTherapiesSystem::SearchAndSortAllHerbsTable);
     connect(ui.tableEFHerbsInDatabase, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
     connect(ui.btnEFAddHerbToFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddHerbToFormula);
-    connect(ui.tableEFHerbsInFormula, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
+    connect(ui.tableEFHerbsInFormula, &QTableWidget::itemDoubleClicked, this, &BodyFixTherapiesSystem::AddAmountToHerbInFormula);
+    connect(ui.btnEFAddAmountToHerbInFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::AddAmountToHerbInFormula);
+    connect(ui.btnEFRemoveAmountFromHerbInFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::RemoveAmountFromHerbInFormula);
     connect(ui.btnEFRemoveHerbFromFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::RemoveHerbFromFormula);
     connect(ui.btnEFConfirmEditToFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::ConfirmEditFormula);
     connect(ui.btnEFDeleteFormula, &QPushButton::clicked, this, &BodyFixTherapiesSystem::DeleteFormula);
-    connect(ui.btnEFBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::BackToManageFormulas);
+    connect(ui.btnEFBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::BackFromEditFormula);
     //set custom column labels for herb tables in create formula
     ui.tableEFHerbsInDatabase->setHorizontalHeaderLabels(herbTableHeaderLabels);
     ui.tableEFHerbsInFormula->setHorizontalHeaderLabels(herbAndAmount);
@@ -145,7 +149,14 @@ bool BodyFixTherapiesSystem::CheckForValidStockAmount(const std::string& input) 
 
 bool BodyFixTherapiesSystem::CheckForValidMonetaryValue(const std::string& input)
 {
-    std::regex pattern("^\\d+\\.\\d{1,2}$");
+    /*/
+    ^ starts the regular expression
+    \\d* matches zero or more digits
+    \\.? matches an optional dot (decimal point)
+    \\d{0,2} matches between 0 and 2 digits after the decimal point
+    $ ends the regular expression
+    /*/
+    std::regex pattern("^\\d*\\.?\\d{0,2}$");
     return std::regex_match(input, pattern);
 }
 
@@ -167,27 +178,28 @@ void BodyFixTherapiesSystem::UpdateHerbTable(std::vector<Herb>* herbList, QTable
         // iterate through number of columns in database
         for (int j = 0; j < herbTable->columnCount(); j++) {
 
-            switch (j) {
-            case 0:
+            if (j == 0) {
                 herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].name.c_str()));
-                break;
-
-            case 1:
+            }
+            else if (j == 1) {
                 herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].category.c_str()));
-                break;
-
-            case 2:
+            }
+            else if (j == 2) {
                 stockTotalWithUnit = std::to_string((*herbList)[i].currentStockTotal) + "g";
-                herbTable->setItem(i, j, new QTableWidgetItem(stockTotalWithUnit.c_str()));
-                break;
+                QTableWidgetItem* item = new QTableWidgetItem(stockTotalWithUnit.c_str());
 
-            case 3:
+                // set background of cell in table to appropriate colour based on the amount of stock of that herb
+                QColor stockColour(QColor::fromString(herbHandler.GetHexColourForStockAmount((*herbList)[i].currentStockTotal)));
+                QBrush stockBrush(stockColour);
+                item->setBackground(stockBrush);
+
+                herbTable->setItem(i, j, item);
+            }
+            else if (j == 3) {
                 herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].costPerGram.ToString().c_str()));
-                break;
-
-            case 4:
+            }
+            else {
                 herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].preferredSupplier.c_str()));
-                break;
             }
         }
     }
@@ -256,10 +268,17 @@ void BodyFixTherapiesSystem::AddHerb()
 
 void BodyFixTherapiesSystem::EditHerb()
 {
-    if (ui.lineEditAHName->text().isEmpty() ||
-        ui.lineEditAHCategory->text().isEmpty() ||
-        ui.lineEditAHPreferredSupplier->text().isEmpty()) {
-        QMessageBox::critical(this, "Error", "At least one field is empty.");
+    // check for empty fields
+    if (ui.lineEditEHName->text().isEmpty() ||
+        ui.lineEditEHCategory->text().isEmpty() ||
+        ui.lineEditEHPreferredSupplier->text().isEmpty()) {
+        QMessageBox::critical(this, "Error", "You cannot confirm an edit right now because at least one field is empty.");
+        return;
+    }
+
+    // check for whether changes have been made
+    if (!CheckForChangesInHerb()) { // no changes
+        QMessageBox::critical(this, "Error", "You cannot confirm an edit right now because no changes have been made.");
         return;
     }
 
@@ -319,6 +338,43 @@ void BodyFixTherapiesSystem::ClearHerbFields()
     ui.lineEditAHPreferredSupplier->clear();
 }
 
+bool BodyFixTherapiesSystem::CheckForChangesInHerb()
+{
+    QLineEdit* lineEditHerbName = nullptr;
+    QLineEdit* lineEditHerbCategory = nullptr;
+    QLineEdit* lineEditHerbPreferredSupplier = nullptr;
+
+    if (GetCurrentPageName() == "pageAddHerb") {
+        lineEditHerbName = ui.lineEditAHName;
+        lineEditHerbCategory = ui.lineEditAHCategory;
+        lineEditHerbPreferredSupplier = ui.lineEditAHPreferredSupplier;
+
+        // as well as setting up variables, also check whether there is a difference in herb current stock total or herb cost per gram
+        if (herbHandler.GetLastDBAccurateHerb().currentStockTotal != ui.lineEditAHCurrentStockTotal->text().toInt() ||
+            herbHandler.GetLastDBAccurateHerb().costPerGram != Money(ui.lineEditAHCostPerGram->text().toInt())) {
+            return true;
+        }
+    }
+    else if (GetCurrentPageName() == "pageEditHerb") {
+        lineEditHerbName = ui.lineEditEHName;
+        lineEditHerbCategory = ui.lineEditEHCategory;
+        lineEditHerbPreferredSupplier = ui.lineEditEHPreferredSupplier;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot check for changes in herb on this page");
+        return false;
+    }
+
+    // check for any difference in name, category or supplier
+    if (herbHandler.GetLastDBAccurateHerb().name != lineEditHerbName->text().toStdString() ||
+        herbHandler.GetLastDBAccurateHerb().category != lineEditHerbCategory->text().toStdString() ||
+        herbHandler.GetLastDBAccurateHerb().preferredSupplier != lineEditHerbPreferredSupplier->text().toStdString()) {
+        return true;
+    }
+
+    return false;
+}
+
 // manage herbs navigation buttons
 
 void BodyFixTherapiesSystem::GoToManageHerbs() {
@@ -350,14 +406,46 @@ void BodyFixTherapiesSystem::GoToEditHerb()
     ui.lineEditEHPreferredSupplier->setText(QString::fromStdString(editHerb.preferredSupplier));
 }
 
+void BodyFixTherapiesSystem::BackFromAddHerb()
+{
+    // check whether there are unsaved changes to the new herb, if yes then display a confirmation box asking the user whether they want to leave their unsaved changes 
+    if (CheckForChangesInHerb()) {
+        QMessageBox confirmationBox;
+        confirmationBox.setIcon(QMessageBox::Question);
+        confirmationBox.setText("You have unsaved changes, are you sure you want to abandon this new herb?");
+        confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        int reply = confirmationBox.exec();
+
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+
+    GoToManageHerbs();
+}
+
+
+
 // ############################################################################################################################
 // ###################################### Edit Herbs functions ################################################################
 // ############################################################################################################################
 
 void BodyFixTherapiesSystem::GoToEditHerbStock()
 {
-    ui.gridStackedWidget->setCurrentWidget(ui.pageEditHerbStock);
+    // (as of time of writing) we know we are on the edit herb page, check whether there are unsaved changes, if yes then display a confirmation box asking the user whether they want to leave their unsaved changes 
+    if (CheckForChangesInHerb()) {
+        QMessageBox confirmationBox;
+        confirmationBox.setIcon(QMessageBox::Question);
+        confirmationBox.setText("You have unsaved changes, if you continue to change stock levels now you will lose these changes. Are you sure?");
+        confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        int reply = confirmationBox.exec();
 
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+
+    ui.gridStackedWidget->setCurrentWidget(ui.pageEditHerbStock);
     std::string currentStockTotal = "Current Stock Total: " + std::to_string(herbHandler.GetLastDBAccurateHerb().currentStockTotal) + "g";
     std::string averageCostPerGram = "Average Cost Per Gram: " + herbHandler.GetLastDBAccurateHerb().costPerGram.ToString();
     ui.lblESHCurrentStockTotal->setText(QString::fromStdString(currentStockTotal));
@@ -379,11 +467,14 @@ void BodyFixTherapiesSystem::AddStockOfHerb()
         return;
     }
 
+    // calculate values of the edited herb object using AddStockOfHerb function
     Herb editedHerb = herbHandler.AddStockOfHerb(herbHandler.GetLastDBAccurateHerb().rowID, inputAmountValue, inputCostPerGram);
+    if (editedHerb.rowID == 0) {
+        QMessageBox::critical(this, "Error", "Failed to update herb stock.");
+    }
 
-    // if AddStockOfHerb returns a Herb object with a rowid of 0, that means it failed to properly add the new stock of herb
-    // see AddStockOfHerb implementation for the reasons why this could happen
-    if (editedHerb.rowID != 0) {
+    // use edit herb function to make the changes in the database
+    if (herbHandler.EditHerb(editedHerb)) {
         // update stock level and average cost per gram and display success window
         std::string currentStockTotal = "Current Stock Total: " + std::to_string(editedHerb.currentStockTotal) + "g";
         std::string averageCostPerGram = "Average Cost Per Gram: " + editedHerb.costPerGram.ToString();
@@ -405,8 +496,12 @@ void BodyFixTherapiesSystem::ReduceStockOfHerb()
     }
 
     Herb editedHerb = herbHandler.ReduceStockOfHerb(herbHandler.GetLastDBAccurateHerb().rowID, inputAmountValue);
+    if (editedHerb.rowID == 0) {
+        QMessageBox::critical(this, "Error", "Failed to reduce herb stock.");
+        return;
+    }
 
-    if (editedHerb.rowID != 0) {
+    if (herbHandler.EditHerb(editedHerb)) {
         std::string currentStockTotal = "Current Stock Total: " + std::to_string(editedHerb.currentStockTotal) + "g";
         ui.lblESHCurrentStockTotal->setText(QString::fromStdString(currentStockTotal));
         QMessageBox::information(this, "Success", "Herb stock successfully updated.");
@@ -414,6 +509,24 @@ void BodyFixTherapiesSystem::ReduceStockOfHerb()
     else {
         QMessageBox::critical(this, "Error", "Failed to update herb stock.");
     }
+}
+
+void BodyFixTherapiesSystem::BackFromEditHerb()
+{
+    // check whether there are unsaved changes to the herb, if yes then display a confirmation box asking the user whether they want to leave their unsaved changes 
+    if (CheckForChangesInHerb()) {
+        QMessageBox confirmationBox;
+        confirmationBox.setIcon(QMessageBox::Question);
+        confirmationBox.setText("You have unsaved changes, you will lose them if you go back. Are you sure?");
+        confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        int reply = confirmationBox.exec();
+
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+
+    GoToManageHerbs();
 }
 
 // ############################################################################################################################
@@ -582,8 +695,6 @@ void BodyFixTherapiesSystem::SearchAndSortAllHerbsTable() {
 
 void BodyFixTherapiesSystem::AddHerbToFormula()
 {
-    // TODO: quality of life fix - check for duplicate herbs already in the table and simply update the quantity of the already existing herb rather than having another of the same herb in the list
-
     QTableWidget* tableHerbsInDatabase = nullptr;
     QTableWidget* tableHerbsInFormula = nullptr;
     std::vector<Herb>* currentHerbListInAllHerbsTable = nullptr;
@@ -617,51 +728,65 @@ void BodyFixTherapiesSystem::AddHerbToFormula()
     int inputValue = QInputDialog::getInt(this,
         "Amount needed",
         // default value, min value, max value, step value
-        "Please enter the amount of the herb you are using, in grams:", 1, 1, 1000, 1, &ok);
-
-    if (ok) {
-        // check for duplicate herb built in to AddHerbToFormula function
-        if (formulaHandler.AddHerbToActiveFormula(formulaHerb, inputValue)) {
-            // check returns true - herb was not in formula already
-            int newRow = tableHerbsInFormula->rowCount();
-            tableHerbsInFormula->insertRow(newRow);
-
-            tableHerbsInFormula->setItem(newRow, 0, new QTableWidgetItem(formulaHerb.name.c_str()));
-
-            std::string herbAmount = std::to_string(inputValue) + "g";
-            tableHerbsInFormula->setItem(newRow, 1, new QTableWidgetItem(herbAmount.c_str()));
-
-            // make contents of table fill up the entire table space horizontally
-            tableHerbsInFormula->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-            // resize columns to ensure no information is cut off by thin columns
-            tableHerbsInFormula->resizeColumnsToContents();
-        }
-        else {
-            // check returns false - herb was already in formula and has had its quantity updated - now needs to be updated in the table as well
-            std::vector<Herb>* currentHerbsInFormula = formulaHandler.GetHerbsInActiveFormula();
-            for (int i = 0; i < currentHerbsInFormula->size(); i++) {
-                if ((*currentHerbsInFormula)[i].rowID == formulaHerb.rowID) {
-                    std::string herbAmount = std::to_string(formulaHandler.GetHerbAmountsInActiveFormula()[i]) + "g";
-                    ui.tableEFHerbsInFormula->setItem(i, 1, new QTableWidgetItem(herbAmount.c_str()));
-                }
-            }
-        }
-        UpdateHerbCosts();
+        "Please enter the amount of the herb you want to add to the formula, in grams:", 1, 1, 1000, 1, &ok);
+    if (!ok) {
+        return;
     }
+
+    // check for there being enough stock
+    if (inputValue > formulaHerb.currentStockTotal) {
+        QMessageBox::critical(this, "Error", "There is not enough stock of this herb to add this amount.");
+        return;
+    }
+
+    // add herb to list(s) stored in formulaHandler object
+    formulaHandler.AddHerbToActiveFormula(formulaHerb, inputValue);
+
+    // remove stock from the herb that was used, in the active herb list
+    Herb reducedStockHerb = herbHandler.ReduceStockOfHerb(formulaHerb.rowID, inputValue);
+    if (reducedStockHerb.rowID == 0) {
+        QMessageBox::critical(this, "Error", "Failed to reduce stock of herb - herb is not in active herb list in herbHandler.");
+        return;
+    }
+
+    // keep track of all herbs that need to be changed in the database and only change them when the user commits the changes
+    // also check whether herb is already in vector and if it is then replace the current herb in the list
+    bool found = false;
+    for (int i = 0; i < herbsToBeEdited.size(); i++) {
+        if (herbsToBeEdited[i].rowID == reducedStockHerb.rowID) {
+            herbsToBeEdited[i] = reducedStockHerb;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        herbsToBeEdited.push_back(reducedStockHerb);
+    }
+
+    // update tables and costs in create/edit formula so that they are accurate to the backend numbers
+    UpdateHerbTable(herbHandler.GetAllHerbs(), tableHerbsInDatabase);
+    UpdateHerbsInFormulaTable();
+    UpdateHerbCosts();
 }
 
 void BodyFixTherapiesSystem::RemoveHerbFromFormula()
 {
+    QTableWidget* tableHerbsInDatabase = nullptr;
     QTableWidget* tableHerbsInFormula = nullptr;
+    std::vector<Herb>* currentHerbListInAllHerbsTable = nullptr;
 
     if (GetCurrentPageName() == "pageCreateFormula") {
+        tableHerbsInDatabase = ui.tableCFHerbsInDatabase;
         tableHerbsInFormula = ui.tableCFHerbsInFormula;
+        currentHerbListInAllHerbsTable = currentHerbListInCFAllHerbsTable;
     }
     else if (GetCurrentPageName() == "pageEditFormula") {
+        tableHerbsInDatabase = ui.tableEFHerbsInDatabase;
         tableHerbsInFormula = ui.tableEFHerbsInFormula;
+        currentHerbListInAllHerbsTable = currentHerbListInEFAllHerbsTable;
     }
     else {
-        QMessageBox::critical(this, "Error", "Cannot remove a herb from a formula on this page");
+        QMessageBox::critical(this, "Error", "Cannot add a herb to a formula on this page");
         return;
     }
 
@@ -672,11 +797,46 @@ void BodyFixTherapiesSystem::RemoveHerbFromFormula()
         return;
     }
 
-    // remove row from table (ui only)
-    tableHerbsInFormula->removeRow(selectedRow);
+    // check that user is sure they want to remove the herb from the formula
+    QMessageBox confirmationBox;
+    confirmationBox.setIcon(QMessageBox::Question);
+    confirmationBox.setText("Are you sure you want to remove this herb from the formula?");
+    confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    int reply = confirmationBox.exec();
+
+    if (reply == QMessageBox::No) {
+        return;
+    }
+
+    Herb formulaHerb = (*currentHerbListInAllHerbsTable)[selectedRow];
+
     // remove herb from list(s) stored in formulaHandler object
     formulaHandler.RemoveHerbFromActiveFormula(selectedRow);
-    // update costs associated with the formula herb list
+
+    // add stock to the herb that was used, in the active herb list
+    Herb addedStockHerb = herbHandler.AddStockOfHerb(formulaHerb.rowID, formulaHerb.currentStockTotal, formulaHerb.costPerGram.ToDouble());
+    if (addedStockHerb.rowID == 0) {
+        QMessageBox::critical(this, "Error", "Failed to add back stock of herb - herb is not in active herb list in herbHandler.");
+        return;
+    }
+
+    // keep track of all herbs that need to be changed in the database and only change them when the user commits the changes
+    // also check whether herb is already in vector and if it is then replace the current herb in the list
+    bool found = false;
+    for (int i = 0; i < herbsToBeEdited.size(); i++) {
+        if (herbsToBeEdited[i].rowID == addedStockHerb.rowID) {
+            herbsToBeEdited[i] = addedStockHerb;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        herbsToBeEdited.push_back(addedStockHerb);
+    }
+
+    // update tables and costs in create/edit formula so that they are accurate to the backend numbers
+    UpdateHerbTable(herbHandler.GetAllHerbs(), tableHerbsInDatabase);
+    UpdateHerbsInFormulaTable();
     UpdateHerbCosts();
 }
 
@@ -703,6 +863,188 @@ void BodyFixTherapiesSystem::UpdateHerbCosts()
 
     lblCostOfHerbs->setText(QString::fromStdString(costOfHerbs));
     lblCostToPatient->setText(QString::fromStdString(costToPatient));
+}
+
+void BodyFixTherapiesSystem::AddAmountToHerbInFormula()
+{
+    QTableWidget* tableHerbsInDatabase = nullptr;
+    QTableWidget* tableHerbsInFormula = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        tableHerbsInDatabase = ui.tableCFHerbsInDatabase;
+        tableHerbsInFormula = ui.tableCFHerbsInFormula;        
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        tableHerbsInDatabase = ui.tableEFHerbsInDatabase;
+        tableHerbsInFormula = ui.tableEFHerbsInFormula;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot add amount to herb in formula on this page");
+        return;
+    }
+
+    int selectedRow = tableHerbsInFormula->currentRow();
+
+    if (selectedRow < 0) {
+        QMessageBox::critical(this, "Error", "No herb selected to edit an amount.");
+        return;
+    }
+
+    bool ok;
+    // default value, min value, max value, step value
+    int inputAmountValue = QInputDialog::getInt(this, "Amount needed", "Please enter the amount of this herb that you would like to add to the amount already in the formula, in grams:", 0, 0, 1000, 1, &ok);
+    if (!ok) {
+        return;
+    }
+
+    if (inputAmountValue == 0) {
+        return;
+    }
+
+    Herb formulaHerb = (*formulaHandler.GetHerbsInActiveFormula())[selectedRow];
+
+    if (inputAmountValue > formulaHerb.currentStockTotal) {
+        QMessageBox::critical(this, "Error", "There is not enough of the specified herb to add this quantity.");
+        return;
+    }
+
+    formulaHandler.AddAmountToHerbInActiveFormula(selectedRow, inputAmountValue);
+
+    // remove stock from the herb that was used, in the active herb list
+    Herb reducedStockHerb = herbHandler.ReduceStockOfHerb(formulaHerb.rowID, inputAmountValue);
+    if (reducedStockHerb.rowID == 0) {
+        QMessageBox::critical(this, "Error", "Failed to reduce stock of herb - herb is not in active herb list in herbHandler.");
+        return;
+    }
+
+    // keep track of all herbs that need to be changed in the database and only change them when the user commits the changes
+    // also check whether herb is already in vector and if it is then replace the current herb in the list
+    bool found = false;
+    for (int i = 0; i < herbsToBeEdited.size(); i++) {
+        if (herbsToBeEdited[i].rowID == reducedStockHerb.rowID) {
+            herbsToBeEdited[i] = reducedStockHerb;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        herbsToBeEdited.push_back(reducedStockHerb);
+    }
+
+    // update tables and costs in create/edit formula so that they are accurate to the backend numbers
+    UpdateHerbTable(herbHandler.GetAllHerbs(), tableHerbsInDatabase);
+    UpdateHerbsInFormulaTable();
+    UpdateHerbCosts();
+}
+
+void BodyFixTherapiesSystem::RemoveAmountFromHerbInFormula()
+{
+    QTableWidget* tableHerbsInDatabase = nullptr;
+    QTableWidget* tableHerbsInFormula = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        tableHerbsInDatabase = ui.tableCFHerbsInDatabase;
+        tableHerbsInFormula = ui.tableCFHerbsInFormula;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        tableHerbsInDatabase = ui.tableEFHerbsInDatabase;
+        tableHerbsInFormula = ui.tableEFHerbsInFormula;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot remove amount from herb in formula on this page");
+        return;
+    }
+
+    int selectedRow = tableHerbsInFormula->currentRow();
+
+    if (selectedRow < 0) {
+        QMessageBox::critical(this, "Error", "No herb selected to edit an amount.");
+        return;
+    }
+    bool ok;
+    // default value, min value, max value, step value
+    int inputAmountValue = QInputDialog::getInt(this, "Amount needed", "Please enter the amount of this herb that you would like to remove from the formula, in grams:", 0, 0, 1000, 1, &ok);
+    if (!ok) {
+        return;
+    }
+
+    if (inputAmountValue == 0) {
+        return;
+    }
+
+    Herb formulaHerb = (*formulaHandler.GetHerbsInActiveFormula())[selectedRow];
+    int formulaHerbAmount = formulaHandler.GetHerbAmountsInActiveFormula()[selectedRow];
+
+    if (inputAmountValue > formulaHerbAmount) {
+        QMessageBox::critical(this, "Error", "Cannot remove more of a herb than what is already in the formula.");
+        return;
+    }
+
+    formulaHandler.RemoveAmountOfHerbInActiveFormula(selectedRow, inputAmountValue);
+
+    // remove stock from the herb that was used, in the active herb list
+    Herb addedStockHerb = herbHandler.AddStockOfHerb(formulaHerb.rowID, inputAmountValue, formulaHerb.costPerGram.ToDouble());
+    if (addedStockHerb.rowID == 0) {
+        QMessageBox::critical(this, "Error", "Failed to add back stock of herb - herb is not in active herb list in herbHandler.");
+        return;
+    }
+
+    // keep track of all herbs that need to be changed in the database and only change them when the user commits the changes
+    // also check whether herb is already in vector and if it is then replace the current herb in the list
+    bool found = false;
+    for (int i = 0; i < herbsToBeEdited.size(); i++) {
+        if (herbsToBeEdited[i].rowID == addedStockHerb.rowID) {
+            herbsToBeEdited[i] = addedStockHerb;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        herbsToBeEdited.push_back(addedStockHerb);
+    }
+
+    // update tables and costs in create/edit formula so that they are accurate to the backend numbers
+    UpdateHerbTable(herbHandler.GetAllHerbs(), tableHerbsInDatabase);
+    UpdateHerbsInFormulaTable();
+    UpdateHerbCosts();
+}
+
+void BodyFixTherapiesSystem::UpdateHerbsInFormulaTable()
+{
+    QTableWidget* tableHerbsInFormula = nullptr;
+
+    if (GetCurrentPageName() == "pageCreateFormula") {
+        tableHerbsInFormula = ui.tableCFHerbsInFormula;
+    }
+    else if (GetCurrentPageName() == "pageEditFormula") {
+        tableHerbsInFormula = ui.tableEFHerbsInFormula;
+    }
+    else {
+        QMessageBox::critical(this, "Error", "Cannot update herbs-in-formula table on this page.");
+        return;
+    }
+
+    tableHerbsInFormula->clearContents();
+    tableHerbsInFormula->setRowCount(0);
+
+    std::vector<Herb>* herbsInActiveFormula = formulaHandler.GetHerbsInActiveFormula();
+    std::vector<int> herbAmountsInActiveFormula = formulaHandler.GetHerbAmountsInActiveFormula();
+
+    for (int i = 0; i < herbsInActiveFormula->size(); i++) {
+        int newRow = tableHerbsInFormula->rowCount();
+        tableHerbsInFormula->insertRow(i);
+        tableHerbsInFormula->setItem(i, 0, new QTableWidgetItem((*herbsInActiveFormula)[i].name.c_str()));
+        std::cout << "\nherb: " << (*herbsInActiveFormula)[i].name;
+
+        std::string herbAmount = std::to_string(herbAmountsInActiveFormula[i]) + "g";
+        std::cout << "\namount: " << herbAmountsInActiveFormula[i];
+        tableHerbsInFormula->setItem(i, 1, new QTableWidgetItem(herbAmount.c_str()));
+    }
+
+    // make contents of table fill up the entire table space horizontally
+    tableHerbsInFormula->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    // resize columns to ensure no information is cut off by thin columns
+    tableHerbsInFormula->resizeColumnsToContents();
 }
 
 void BodyFixTherapiesSystem::ClearFormulaFields()
@@ -825,6 +1167,15 @@ void BodyFixTherapiesSystem::FinishFormula()
         Money costOfHerbs = formulaHandler.RecalculateCostOfHerbs();
         Money costToPatient = formulaHandler.RecalculateCostToPatient();
         if (formulaHandler.AddFormula(lineEditPatientName->text().toStdString())) {
+            
+            // commit changes to the active herb list to the database
+            for (int i = 0; i < herbsToBeEdited.size(); i++) {
+                if (!herbHandler.EditHerb(herbsToBeEdited[i])) {
+                    std::cout << "failed to edit herb in database";
+                }
+            }
+            herbsToBeEdited.clear();
+
             GoToManageFormulas();
             QMessageBox::information(this, "Success", "Formula successfully added to database.");
         }
@@ -897,6 +1248,15 @@ void BodyFixTherapiesSystem::ConfirmEditFormula()
         Money costOfHerbs = formulaHandler.RecalculateCostOfHerbs();
         Money costToPatient = formulaHandler.RecalculateCostToPatient();
         if (formulaHandler.EditFormula(formulaHandler.GetLastDBAccurateFormula().rowID, lineEditPatientName->text().toStdString())) {
+
+            // commit changes to the active herb list to the database
+            for (int i = 0; i < herbsToBeEdited.size(); i++) {
+                if (!herbHandler.EditHerb(herbsToBeEdited[i])) {
+                    std::cout << "failed to edit herb in database";
+                }
+            }
+            herbsToBeEdited.clear();
+
             GoToManageFormulas();
             QMessageBox::information(this, "Success", "Formula successfully edited in the database.");
         }
@@ -924,6 +1284,24 @@ void BodyFixTherapiesSystem::DeleteFormula()
             QMessageBox::critical(this, "Error", "Failed to delete formula from database.");
         }
     }
+}
+
+void BodyFixTherapiesSystem::BackFromEditFormula()
+{
+    // check whether there are unsaved changes to the formula, if yes then display a confirmation box asking the user whether they want to leave their unsaved changes 
+    if (CheckForChangesInFormula()) {
+        QMessageBox confirmationBox;
+        confirmationBox.setIcon(QMessageBox::Question);
+        confirmationBox.setText("You have unsaved changes, you will lose them if you go back. Continue?");
+        confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        int reply = confirmationBox.exec();
+
+        if (reply == QMessageBox::No) {
+            return;
+        }
+    }
+
+    GoToManageFormulas();
 }
 
 // ############################################################################################################################

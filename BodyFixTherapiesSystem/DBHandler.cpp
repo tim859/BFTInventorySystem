@@ -3,6 +3,8 @@
 #include "Formula.h"
 #include <iostream>
 #include <qsqlerror.h>
+#include <QCoreApplication>
+#include <QDir>
 
 DBHandler* DBHandler::instance = nullptr;
 
@@ -10,6 +12,20 @@ DBHandler* DBHandler::instance = nullptr;
 
 DBHandler::DBHandler(std::string connName)
 {
+    // deployment ready function definition that finds the databse when it is in the same directory as the executable
+
+    //std::string relativePath = "./BFTDB.db"; // Relative path to the database file
+    //db = QSqlDatabase::addDatabase("QSQLITE", QString::fromStdString(connName));
+    //db.setDatabaseName(QString::fromStdString(relativePath));
+
+    //if (!db.open()) {
+    //    std::cout << "Failed to open database with connection name: " << connName << "\n";
+    //}
+
+
+
+    // debugging function definition to be deleted before any releases
+
     db = QSqlDatabase::addDatabase("QSQLITE", QString::fromStdString(connName));
     db.setDatabaseName("F:/Misc Coding Projects/C++ Projects/BodyFixTherapies/BodyFixTherapiesSystem/BFTDB.db");
 

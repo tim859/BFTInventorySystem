@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.10)
+project(BodyFixTherapiesSystem)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find Qt5 package
+find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+
+# Add your source files
+set(SOURCE_FILES
+    Formula.cpp
+    FormulaHandler.cpp
+    Herb.cpp
+    Money.cpp
+    BodyFixTherapiesSystem.cpp
+    DBHandler.cpp
+    HerbHandler.cpp
+    main.cpp
+)
+
+# Create an executable
+add_executable(BodyFixTherapiesSystem ${SOURCE_FILES})
+
+# Link against Qt libraries
+target_link_libraries(BodyFixTherapiesSystem PRIVATE Qt5::Core Qt5::Gui Qt5::Widgets QT5::SQL)

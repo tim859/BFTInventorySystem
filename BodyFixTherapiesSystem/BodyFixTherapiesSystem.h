@@ -19,7 +19,7 @@ private slots:
     // slots for main menu
     void GoToManageHerbs();
     void GoToManageFormulas();
-    void GoToManageSuppliers();
+    //void GoToManageSuppliers();
     void GoToSettings();
     void QuitApp();
 

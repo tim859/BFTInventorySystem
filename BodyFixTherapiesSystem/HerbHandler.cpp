@@ -293,15 +293,15 @@ std::string HerbHandler::GetHexColourForStockAmount(int stockAmount)
     int highStock = 1500;
 
     if (stockAmount <= veryLowOrNoStock) {
-        return "#ff0000";
+        return "#610000";
     }
     else if (stockAmount <= lowStock) {
-        return "#ffa500";
+        return "#99431f";
     }
     else if (stockAmount <= mediumStock) {
-        return "#ffff00";
+        return "#957f07";
     }
     else {
-        return "#48b748";
+        return "#154f30";
     }
 }

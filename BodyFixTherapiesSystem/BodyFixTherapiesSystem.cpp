@@ -12,19 +12,19 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
 {
     ui.setupUi(this);
 
-    // H1 font
-    QFont h1("Calibri", 40);
-    h1.setBold(true);
+    //// H1 font
+    //QFont h1("Calibri", 40);
+    //h1.setBold(true);
 
-    // H2 font
-    QFont h2("Calibri", 30);
-    h2.setBold(true);
+    //// H2 font
+    //QFont h2("Calibri", 30);
+    //h2.setBold(true);
 
-    ui.lblMMBFTInventorySystem->setFont(h1);
-    ui.lblMMBFTInventorySystem->setStyleSheet("color: #3c829f");
+    //ui.lblMMBFTInventorySystem->setFont(h1);
+    //ui.lblMMBFTInventorySystem->setStyleSheet("color: #3c829f");
 
-    ui.lblMMMainMenu->setFont(h2);
-    ui.lblMMMainMenu->setStyleSheet("color: #3c829f");
+    //ui.lblMMMainMenu->setFont(h2);
+    //ui.lblMMMainMenu->setStyleSheet("color: #3c829f");
 
     QStringList herbTableHeaderLabels; 
     herbTableHeaderLabels << "Name" << "Category" << "Current Stock Level" << "Cost Per Gram" << "Preferred Supplier";
@@ -37,7 +37,7 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     // ---------- main menu ----------
     connect(ui.btnMMManageHerbs, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageHerbs);
     connect(ui.btnMMManageFormulas, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageFormulas);
-    connect(ui.btnMMManageSuppliers, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageSuppliers);
+    //connect(ui.btnMMManageSuppliers, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToManageSuppliers);
     connect(ui.btnMMSettings, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToSettings);
     connect(ui.btnMMQuit, &QPushButton::clicked, this, &BodyFixTherapiesSystem::QuitApp);
 
@@ -177,37 +177,40 @@ void BodyFixTherapiesSystem::UpdateHerbTable(std::vector<Herb>* herbList, QTable
         herbTable->insertRow(herbTable->rowCount());
         // iterate through number of columns in database
         for (int j = 0; j < herbTable->columnCount(); j++) {
+            QTableWidgetItem* item = nullptr;
 
             if (j == 0) {
-                herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].name.c_str()));
+                item = new QTableWidgetItem((*herbList)[i].name.c_str());
             }
             else if (j == 1) {
-                herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].category.c_str()));
+                item = new QTableWidgetItem((*herbList)[i].category.c_str());
             }
             else if (j == 2) {
                 stockTotalWithUnit = std::to_string((*herbList)[i].currentStockTotal) + "g";
-                QTableWidgetItem* item = new QTableWidgetItem(stockTotalWithUnit.c_str());
-
-                // set background of cell in table to appropriate colour based on the amount of stock of that herb
+                item = new QTableWidgetItem(stockTotalWithUnit.c_str());
                 QColor stockColour(QColor::fromString(herbHandler.GetHexColourForStockAmount((*herbList)[i].currentStockTotal)));
                 QBrush stockBrush(stockColour);
                 item->setBackground(stockBrush);
-
-                herbTable->setItem(i, j, item);
             }
             else if (j == 3) {
-                herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].costPerGram.ToString().c_str()));
+                item = new QTableWidgetItem((*herbList)[i].costPerGram.ToString().c_str());
             }
             else {
-                herbTable->setItem(i, j, new QTableWidgetItem((*herbList)[i].preferredSupplier.c_str()));
+                item = new QTableWidgetItem((*herbList)[i].preferredSupplier.c_str());
+            }
+
+            // Set text alignment to center for each item
+            if (item != nullptr) {
+                item->setTextAlignment(Qt::AlignCenter);
+                herbTable->setItem(i, j, item);
             }
         }
     }
+
     // make contents of herbTable fill up the entire table space horizontally
     herbTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    // resize columns to ensure no information is cut off by thin columns
-    herbTable->resizeColumnsToContents();
 }
+
 
 void BodyFixTherapiesSystem::SearchAndSortMHTable()
 {
@@ -401,7 +404,7 @@ void BodyFixTherapiesSystem::GoToEditHerb()
     // populate edit herb page with herb information
     ui.lineEditEHName->setText(QString::fromStdString(editHerb.name));
     ui.lineEditEHCategory->setText(QString::fromStdString(editHerb.category));
-    ui.lblEHCurrentStockTotal->setText(QString::fromStdString("Current Stock Total: " + std::to_string(editHerb.currentStockTotal)));
+    ui.lblEHCurrentStockTotal->setText(QString::fromStdString("Current Stock Total: " + std::to_string(editHerb.currentStockTotal) + "g"));
     ui.lblEHCostPerGram->setText(QString::fromStdString("Average Cost Per Gram: " + editHerb.costPerGram.ToString()));
     ui.lineEditEHPreferredSupplier->setText(QString::fromStdString(editHerb.preferredSupplier));
 }
@@ -546,22 +549,22 @@ void BodyFixTherapiesSystem::UpdateMFTable(std::vector<Formula>* formulaList)
         // iterate through number of columns in database
         for (int j = 0; j < ui.tableMFFormulaTable->columnCount(); j++) {
 
+            QTableWidgetItem* item = nullptr;
+
             switch (j) {
             case 0:
-                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem((*formulaList)[i].patientName.c_str()));
+                item = new QTableWidgetItem((*formulaList)[i].patientName.c_str());
                 break;
 
             case 1:
-                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem(formulaHandler.GetCostOfHerbsInFormula(i).ToString().c_str()));
+                item = new QTableWidgetItem(formulaHandler.GetCostOfHerbsInFormula(i).ToString().c_str());
                 break;
 
             case 2:
-                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem(formulaHandler.GetCostToPatientOfFormula(i).ToString().c_str()));
+                item = new QTableWidgetItem(formulaHandler.GetCostToPatientOfFormula(i).ToString().c_str());
                 break;
 
-            case 3:
-                // create std::string list of herbs and amounts from the information stored in database
-                // format e.g. Example Herb: 23g, Example Herb 2: 41g e.t.c.
+            case 3: {
                 std::vector<Herb>* herbList = (*formulaList)[i].listOfHerbs;
                 std::vector<int> herbAmountList = (*formulaList)[i].listOfHerbAmounts;
                 std::string herbsAndAmountsListAsString;
@@ -573,17 +576,23 @@ void BodyFixTherapiesSystem::UpdateMFTable(std::vector<Formula>* formulaList)
                     }
                 }
 
-                ui.tableMFFormulaTable->setItem(i, j, new QTableWidgetItem(herbsAndAmountsListAsString.c_str()));
+                item = new QTableWidgetItem(herbsAndAmountsListAsString.c_str());
                 break;
+                }
+            }
+
+            // Set text alignment to center for each item
+            if (item != nullptr) {
+                item->setTextAlignment(Qt::AlignCenter);
+                ui.tableMFFormulaTable->setItem(i, j, item);
             }
         }
     }
     // make contents of table fill up the entire table space horizontally
     ui.tableMFFormulaTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    // resize columns to ensure no information is cut off by thin columns
-    ui.tableMFFormulaTable->resizeColumnsToContents();
     currentFormulaListInMFTable = formulaList;
 }
+
 
 void BodyFixTherapiesSystem::GoToManageFormulas() {
     ClearFormulaFields();
@@ -600,6 +609,7 @@ void BodyFixTherapiesSystem::GoToCreateFormula()
     formulaHandler.SetLastDBAccurateFormula(Formula());
     ui.gridStackedWidget->setCurrentWidget(ui.pageCreateFormula);
     UpdateHerbTable(herbHandler.GetAllHerbs(), ui.tableCFHerbsInDatabase);
+    UpdateHerbsInFormulaTable();
     currentHerbListInCFAllHerbsTable = herbHandler.GetAllHerbs();
     formulaHandler.ClearHerbsFromActiveFormula();
 }
@@ -644,6 +654,7 @@ void BodyFixTherapiesSystem::GoToEditFormula()
 
     // update herbs in database table in edit formula
     UpdateHerbTable(herbHandler.GetAllHerbs(), ui.tableEFHerbsInDatabase);
+    UpdateHerbsInFormulaTable();
     currentHerbListInEFAllHerbsTable = herbHandler.GetAllHerbs();
 }
 
@@ -1033,19 +1044,23 @@ void BodyFixTherapiesSystem::UpdateHerbsInFormulaTable()
     for (int i = 0; i < herbsInActiveFormula->size(); i++) {
         int newRow = tableHerbsInFormula->rowCount();
         tableHerbsInFormula->insertRow(i);
-        tableHerbsInFormula->setItem(i, 0, new QTableWidgetItem((*herbsInActiveFormula)[i].name.c_str()));
-        std::cout << "\nherb: " << (*herbsInActiveFormula)[i].name;
 
+        // Create table item for herb name and center its text
+        QTableWidgetItem* herbNameItem = new QTableWidgetItem((*herbsInActiveFormula)[i].name.c_str());
+        herbNameItem->setTextAlignment(Qt::AlignCenter);
+        tableHerbsInFormula->setItem(i, 0, herbNameItem);
+
+        // Create table item for herb amount and center its text
         std::string herbAmount = std::to_string(herbAmountsInActiveFormula[i]) + "g";
-        std::cout << "\namount: " << herbAmountsInActiveFormula[i];
-        tableHerbsInFormula->setItem(i, 1, new QTableWidgetItem(herbAmount.c_str()));
+        QTableWidgetItem* herbAmountItem = new QTableWidgetItem(herbAmount.c_str());
+        herbAmountItem->setTextAlignment(Qt::AlignCenter);
+        tableHerbsInFormula->setItem(i, 1, herbAmountItem);
     }
 
     // make contents of table fill up the entire table space horizontally
     tableHerbsInFormula->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    // resize columns to ensure no information is cut off by thin columns
-    tableHerbsInFormula->resizeColumnsToContents();
 }
+
 
 void BodyFixTherapiesSystem::ClearFormulaFields()
 {
@@ -1309,7 +1324,7 @@ void BodyFixTherapiesSystem::BackFromEditFormula()
 // ############################################################################################################################
 
 inline void BodyFixTherapiesSystem::GoToMainMenu() { ui.gridStackedWidget->setCurrentWidget(ui.pageMainMenu); }
-inline void BodyFixTherapiesSystem::GoToManageSuppliers() { ui.gridStackedWidget->setCurrentWidget(ui.pageManageSuppliers); }
+//inline void BodyFixTherapiesSystem::GoToManageSuppliers() { ui.gridStackedWidget->setCurrentWidget(ui.pageManageSuppliers); }
 inline void BodyFixTherapiesSystem::GoToSettings() { ui.gridStackedWidget->setCurrentWidget(ui.pageSettings); }
 inline void BodyFixTherapiesSystem::GoToAddHerb() { ui.gridStackedWidget->setCurrentWidget(ui.pageAddHerb); }
 inline void BodyFixTherapiesSystem::QuitApp() { close(); }

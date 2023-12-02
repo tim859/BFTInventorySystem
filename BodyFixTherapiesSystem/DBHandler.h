@@ -12,6 +12,7 @@ class DBHandler
 {
 private:
 	static DBHandler* instance;
+	static QString ReadDBPathFromConfig();
 	QSqlDatabase db;
 	DBHandler(std::string connName);
 	~DBHandler();
@@ -33,6 +34,5 @@ public:
 	bool AddFormulaToDB(Formula newFormula);
 	bool EditFormulaInDB(Formula editedFormula);
 	bool DeleteFormulaFromDB(int rowID);
-	int GetRowsInFormulaTable();
 	int GetRowIDOfLastRecordInFormulaTable();
 };

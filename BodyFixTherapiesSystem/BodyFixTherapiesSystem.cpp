@@ -1,5 +1,5 @@
-#include <qsqldatabase.h>
-#include <qsqlquery.h>
+#include <QtSql/qsqlquery.h>
+#include <QtSql/qsqldatabase.h>
 #include <qmessagebox.h>
 #include <QInputDialog>
 #include <regex>
@@ -11,20 +11,6 @@
 BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent)
 {
     ui.setupUi(this);
-
-    //// H1 font
-    //QFont h1("Calibri", 40);
-    //h1.setBold(true);
-
-    //// H2 font
-    //QFont h2("Calibri", 30);
-    //h2.setBold(true);
-
-    //ui.lblMMBFTInventorySystem->setFont(h1);
-    //ui.lblMMBFTInventorySystem->setStyleSheet("color: #3c829f");
-
-    //ui.lblMMMainMenu->setFont(h2);
-    //ui.lblMMMainMenu->setStyleSheet("color: #3c829f");
 
     QStringList herbTableHeaderLabels; 
     herbTableHeaderLabels << "Name" << "Category" << "Current Stock Level" << "Cost Per Gram" << "Preferred Supplier";
@@ -156,7 +142,7 @@ bool BodyFixTherapiesSystem::CheckForValidMonetaryValue(const std::string& input
     \\d{0,2} matches between 0 and 2 digits after the decimal point
     $ ends the regular expression
     /*/
-    std::regex pattern("^\\d*\\.?\\d{0,2}$");
+    std::regex pattern("^\\d*\\.?\\d*$");
     return std::regex_match(input, pattern);
 }
 

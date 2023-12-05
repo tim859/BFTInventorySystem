@@ -68,6 +68,8 @@ private slots:
     void SaveSettings();
     void ChooseDatabase();
     void CloneDatabase();
+    void DeleteAllHerbsAndFormulas();
+    void DeleteAllFormulas();
 
 private:
     // general properties and functions

@@ -815,7 +815,11 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLineEdit" name="lineEditSVeryLowOrNoStock"/>
+                <widget class="QLineEdit" name="lineEditSVeryLowOrNoStock">
+                 <property name="styleSheet">
+                  <string notr="true"/>
+                 </property>
+                </widget>
                </item>
                <item>
                 <widget class="QLabel" name="lblSLowStock">
@@ -919,6 +923,54 @@
               </layout>
              </item>
              <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_2">
+               <property name="topMargin">
+                <number>50</number>
+               </property>
+               <property name="bottomMargin">
+                <number>50</number>
+               </property>
+               <item>
+                <widget class="QPushButton" name="btnSDeleteAllHerbsAndFormulas">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>500</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Delete all herbs and formulas from database</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btnSDeleteAllFormulas">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>500</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Delete all formulas from database</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
               <widget class="QLabel" name="lblSStatistics">
                <property name="font">
                 <font>
@@ -956,6 +1008,18 @@
           <layout class="QHBoxLayout" name="horizontalLayout_19">
            <item>
             <widget class="QPushButton" name="btnSSave">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>250</width>
+               <height>16777215</height>
+              </size>
+             </property>
              <property name="text">
               <string>Save</string>
              </property>
@@ -963,6 +1027,18 @@
            </item>
            <item>
             <widget class="QPushButton" name="btnSBack">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>250</width>
+               <height>16777215</height>
+              </size>
+             </property>
              <property name="text">
               <string>Back</string>
              </property>

@@ -152,6 +152,18 @@ bool DBHandler::DeleteHerbFromDB(int rowID)
     return false;
 }
 
+bool DBHandler::DeleteAllHerbsFromDB()
+{
+    QSqlQuery deleteQuery(db);
+    deleteQuery.prepare("DELETE FROM herbs");
+
+    if (deleteQuery.exec()) {
+        return true;
+    }
+
+    return false;
+}
+
 int DBHandler::GetRowIDOfLastRecordInHerbTable()
 {
     QSqlQuery selectQuery(db);
@@ -242,6 +254,18 @@ bool DBHandler::DeleteFormulaFromDB(int rowID)
     QSqlQuery deleteQuery(db);
     deleteQuery.prepare("DELETE FROM formulas WHERE rowid = :rowid");
     deleteQuery.bindValue(":rowid", rowID);
+
+    if (deleteQuery.exec()) {
+        return true;
+    }
+
+    return false;
+}
+
+bool DBHandler::DeleteAllFormulasFromDB()
+{
+    QSqlQuery deleteQuery(db);
+    deleteQuery.prepare("DELETE FROM formulas");
 
     if (deleteQuery.exec()) {
         return true;

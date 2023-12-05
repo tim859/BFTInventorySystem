@@ -213,6 +213,17 @@ bool HerbHandler::DeleteHerb(int rowID)
     return false;
 }
 
+bool HerbHandler::DeleteAllHerbs()
+{
+    // remove all herbs from database
+    if (DBHandler::GetInstance().DeleteAllHerbsFromDB()) {
+        activeHerbList->clear();
+        return true;
+    }
+
+    return false;
+}
+
 Herb HerbHandler::AddStockOfHerb(int rowID, int addStockAmount, double addCostPerGram)
 {
     Herb* editedHerb = nullptr;
@@ -311,7 +322,13 @@ std::string HerbHandler::GetHexColourForStockAmount(int stockAmount)
     }
 }
 
-std::string HerbHandler::GetTotalHerbStockValue()
+Money HerbHandler::GetTotalHerbStockValue()
 {
-    return std::string();
+    Money totalValue = 0;
+
+    for (int i = 0; i < activeHerbList->size(); i++) {
+        totalValue += ((*activeHerbList)[i].costPerGram * (*activeHerbList)[i].currentStockTotal);
+    }
+
+    return totalValue;
 }

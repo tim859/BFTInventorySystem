@@ -15,6 +15,7 @@ public:
 	bool AddFormula(std::string patientName);
 	bool EditFormula(int rowID, std::string newPatientName);
 	bool DeleteFormula();	
+	bool DeleteAllFormulas();
 	void AddHerbToActiveFormula(Herb formulaHerb, int formulaAmount);
 	void RemoveHerbFromActiveFormula(int herbIndex);
 	void AddAmountToHerbInActiveFormula(int herbIndex, int herbChangeAmount);

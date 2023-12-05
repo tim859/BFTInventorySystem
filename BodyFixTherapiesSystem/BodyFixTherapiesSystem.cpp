@@ -117,6 +117,8 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent)
     connect(ui.btnSSave, &QPushButton::clicked, this, &BodyFixTherapiesSystem::SaveSettings);
     connect(ui.btnSChooseDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::ChooseDatabase);
     connect(ui.btnSCloneDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::CloneDatabase);
+    connect(ui.btnSDeleteAllHerbsAndFormulas, &QPushButton::clicked, this, &BodyFixTherapiesSystem::DeleteAllHerbsAndFormulas);
+    connect(ui.btnSDeleteAllFormulas, &QPushButton::clicked, this, &BodyFixTherapiesSystem::DeleteAllFormulas);
     connect(ui.btnSBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToMainMenu);
 
     // stop user from being able to edit tables by clicking on them
@@ -1340,6 +1342,8 @@ void BodyFixTherapiesSystem::GoToSettings() {
     ui.lineEditSMediumStock->setText(QString::number(settings.value("SETTINGS/MediumStock", 0).toInt()));
     ui.lineEditSHighStock->setText(QString::number(settings.value("SETTINGS/HighStock", 0).toInt()));
     ui.lineEditSDatabaseInUse->setText(settings.value("SETTINGS/DatabasePath", "").toString());
+    std::string totalValue = "Total value of herb stock: " + herbHandler.GetTotalHerbStockValue().ToString();
+    ui.lblSTotalValueOfHerbStock->setText(totalValue.c_str());
 }
 
 void BodyFixTherapiesSystem::SaveSettings()
@@ -1376,6 +1380,9 @@ void BodyFixTherapiesSystem::SaveSettings()
     DBHandler::GetInstance().UpdateDatabase();
     herbHandler.RefreshHerbsFromDatabase();
 
+    std::string totalValue = "Total value of herb stock: " + herbHandler.GetTotalHerbStockValue().ToString();
+    ui.lblSTotalValueOfHerbStock->setText(totalValue.c_str());
+
     QMessageBox::information(this, "Success", "Settings updated successfully.");
 }
 
@@ -1409,6 +1416,75 @@ void BodyFixTherapiesSystem::CloneDatabase()
         }
         else {
             QMessageBox::critical(this, tr("Error"), tr("Failed to clone the database."));
+        }
+    }
+}
+
+void BodyFixTherapiesSystem::DeleteAllHerbsAndFormulas()
+{
+    QMessageBox confirmationBox;
+    confirmationBox.setIcon(QMessageBox::Question);
+    confirmationBox.setText("This will delete ALL herbs and formulas from the database, are you sure?");
+    confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    int reply = confirmationBox.exec();
+
+    if (reply == QMessageBox::Yes) {
+        confirmationBox.setIcon(QMessageBox::Question);
+        confirmationBox.setText("Just to be clear, ALL the herbs in the database will be gone forever, are you completely sure?");
+        confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        int reply = confirmationBox.exec();
+
+        if (reply == QMessageBox::Yes) {
+            confirmationBox.setIcon(QMessageBox::Question);
+            confirmationBox.setText("This is your last chance, if you press yes all those herbs will be gone and you will never see them again, are you ABSOLUTELY sure?");
+            confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+            int reply = confirmationBox.exec();
+
+            if (reply == QMessageBox::Yes) {
+                if (herbHandler.DeleteAllHerbs()) {
+                    if (formulaHandler.DeleteAllFormulas()) {
+                        QMessageBox::information(this, "Success", "Herbs and formulas deleted from database successfully.");
+                    }
+                    else {
+                        QMessageBox::critical(this, "Error", "Succesfully deleted herbs but failed to delete formulas.");
+                    }
+                }
+                else {
+                    QMessageBox::critical(this, "Error", "Failed to delete herbs and formulas from database.");
+                }
+            }
+        }
+    }
+}
+
+void BodyFixTherapiesSystem::DeleteAllFormulas()
+{
+    QMessageBox confirmationBox;
+    confirmationBox.setIcon(QMessageBox::Question);
+    confirmationBox.setText("This will delete ALL  formulas from the database, are you sure?");
+    confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    int reply = confirmationBox.exec();
+
+    if (reply == QMessageBox::Yes) {
+        confirmationBox.setIcon(QMessageBox::Question);
+        confirmationBox.setText("Just to be clear, ALL the formulas in the database will be gone forever, are you completely sure?");
+        confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        int reply = confirmationBox.exec();
+
+        if (reply == QMessageBox::Yes) {
+            confirmationBox.setIcon(QMessageBox::Question);
+            confirmationBox.setText("This is your last chance, if you press yes all those formulas will be gone and you will never see them again, are you ABSOLUTELY sure?");
+            confirmationBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+            int reply = confirmationBox.exec();
+
+            if (reply == QMessageBox::Yes) {
+                if (formulaHandler.DeleteAllFormulas()) {
+                    QMessageBox::information(this, "Success", "Formulas deleted from database successfully.");
+                }
+                else {
+                    QMessageBox::critical(this, "Error", "Failed to delete formulas.");
+                }
+            }
         }
     }
 }

@@ -175,6 +175,17 @@ bool FormulaHandler::DeleteFormula()
     return false;
 }
 
+bool FormulaHandler::DeleteAllFormulas()
+{
+    // remove all herbs from database
+    if (DBHandler::GetInstance().DeleteAllFormulasFromDB()) {
+        formulaList.clear();
+        return true;
+    }
+
+    return false;
+}
+
 Money FormulaHandler::RecalculateCostOfHerbs()
 {
     Money totalAmount;

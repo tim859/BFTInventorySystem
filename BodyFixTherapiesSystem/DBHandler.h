@@ -29,6 +29,7 @@ public:
 	bool AddHerbToDB(Herb newHerb);
 	bool EditHerbInDB(Herb editedHerb);
 	bool DeleteHerbFromDB(int rowID);
+	bool DeleteAllHerbsFromDB();
 	int GetRowIDOfLastRecordInHerbTable();
 
 	// formula functions
@@ -37,5 +38,6 @@ public:
 	bool AddFormulaToDB(Formula newFormula);
 	bool EditFormulaInDB(Formula editedFormula);
 	bool DeleteFormulaFromDB(int rowID);
+	bool DeleteAllFormulasFromDB();
 	int GetRowIDOfLastRecordInFormulaTable();
 };

@@ -22,6 +22,7 @@ public:
 	bool EditHerb(int rowID, std::string newName, std::string newCategory, int newCurrentStockTotal, Money newCostPerGram, std::string newPreferredSupplier);
 	bool EditHerb(Herb editedHerb);
 	bool DeleteHerb(int rowID);
+	bool DeleteAllHerbs();
 	/// <summary>
 	/// Increases currentStockTotal of the corresponding herb as well as calculating a new weighted average cost per gram of that herb
 	/// </summary>
@@ -30,7 +31,7 @@ public:
 	void SetLastDBAccurateHerb(Herb newLastDBAccurateHerb);
 	Herb GetLastDBAccurateHerb();
 	std::string GetHexColourForStockAmount(int stockAmount);
-	std::string GetTotalHerbStockValue();
+	Money GetTotalHerbStockValue();
 
 private:
 	// previous method:

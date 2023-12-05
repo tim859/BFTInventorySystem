@@ -2,41 +2,58 @@
 #include "Herb.h"
 #include "Formula.h"
 #include <iostream>
-#include <qsqlerror.h>
+#include <QtSql/qsqlerror.h>
 #include <QCoreApplication>
 #include <QDir>
 
 DBHandler* DBHandler::instance = nullptr;
+std::string DBHandler::connName = "DBHandlerConn";
 
 // ---------- general functions ----------
 
-DBHandler::DBHandler(std::string connName)
+DBHandler::DBHandler() :
+    // for debug
+    settings("F:/Misc Coding Projects/C++ Projects/BodyFixTherapies/BodyFixTherapiesSystem/config.ini", QSettings::IniFormat)
+
+    // for release
+    // settings("./config.ini", QSettings::IniFormat)
 {
-    // deployment ready function definition that finds the databse when it is in the same directory as the executable
-
-    //std::string relativePath = "./BFTDB.db"; // Relative path to the database file
-    //db = QSqlDatabase::addDatabase("QSQLITE", QString::fromStdString(connName));
-    //db.setDatabaseName(QString::fromStdString(relativePath));
-
-    //if (!db.open()) {
-    //    std::cout << "Failed to open database with connection name: " << connName << "\n";
-    //}
-
-
-
-    // debugging function definition to be deleted before any releases
-
-    db = QSqlDatabase::addDatabase("QSQLITE", QString::fromStdString(connName));
-    db.setDatabaseName("F:/Misc Coding Projects/C++ Projects/BodyFixTherapies/BodyFixTherapiesSystem/BFTDB.db");
-
-    if (!db.open()) {
-        std::cout << "failed to open database with connection name: " << connName << "\n";
-    }
+    UpdateDatabase();
 }
 
 DBHandler::~DBHandler()
 {
     db.close();
+}
+
+DBHandler& DBHandler::GetInstance() {
+    if (!instance) {
+        instance = new DBHandler();
+    }
+
+    return *instance;
+}
+
+void DBHandler::UpdateDatabase()
+{
+    // check if there is already an open database
+    if (QSqlDatabase::contains(QString::fromStdString(connName))) {
+        // close and remove existing database
+        QSqlDatabase::database(QString::fromStdString(connName)).close();
+        QSqlDatabase::removeDatabase(QString::fromStdString(connName));
+    }
+
+    // add new database connection
+    db = QSqlDatabase::addDatabase("QSQLITE", QString::fromStdString(connName));
+
+    // set database path
+    std::string dbPath = settings.value("SETTINGS/DatabasePath", "./BFTDB.db").toString().toStdString();
+    db.setDatabaseName(QString::fromStdString(dbPath));
+
+
+    if (!db.open()) {
+        std::cout << "failed to open database with connection name: " << connName << "\n";
+    }
 }
 
 std::string DBHandler::GetHerbsAndAmountsAsDBString(std::vector<Herb>* listOfHerbs, std::vector<int> listOfHerbAmounts)
@@ -62,14 +79,6 @@ std::string DBHandler::GetHerbsAndAmountsAsDBString(std::vector<Herb>* listOfHer
     herbAndAmountString[herbAndAmountString.size() - 1] = 'e';
 
     return herbAndAmountString;
-}
-
-DBHandler& DBHandler::GetInstance() {
-    if (!instance) {
-        instance = new DBHandler("DBHandlerConn");
-    }
-
-    return *instance;
 }
 
 // ---------- herb functions ----------

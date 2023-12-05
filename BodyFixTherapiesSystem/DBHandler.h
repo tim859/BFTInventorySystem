@@ -1,6 +1,7 @@
 #pragma once
-#include <qsqldatabase.h>
-#include <qsqlquery.h>
+#include <QtSql/qsqlquery.h>
+#include <QtSql/qsqldatabase.h>
+#include <qsettings.h>
 
 class Herb;
 class Formula;
@@ -12,14 +13,16 @@ class DBHandler
 {
 private:
 	static DBHandler* instance;
-	static QString ReadDBPathFromConfig();
+	static std::string connName;
 	QSqlDatabase db;
-	DBHandler(std::string connName);
+	QSettings settings;
+	DBHandler();
 	~DBHandler();
 	std::string GetHerbsAndAmountsAsDBString(std::vector<Herb>* listOfHerbs, std::vector<int> listofHerbAmounts);
 
 public:
 	static DBHandler& GetInstance();
+	void UpdateDatabase();
 
 	// herb functions
 	QSqlQuery GetAllHerbsFromDB();

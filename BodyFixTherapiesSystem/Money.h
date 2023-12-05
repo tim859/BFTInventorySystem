@@ -39,10 +39,12 @@ public:
 	Money& operator+=(const long long int);
 	Money operator-(const Money&);
 	Money operator*(const int);
+	Money operator*(const double);
 	Money operator*(const Money& other);
 	Money operator/(const Money& other);
 	bool operator<(const Money&);
 	bool operator==(const Money);
+	bool operator!=(const Money);
 
 	// Returns GBP in format £XX.xx
 	std::string ToString();

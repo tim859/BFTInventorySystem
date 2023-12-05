@@ -134,6 +134,30 @@ Money Money::operator*(const int scalar)
 	return Money(totalMills, "anything");
 }
 
+Money Money::operator*(const double scalar)
+{
+	// Calculate the total amount in mills as a floating-point number
+	double totalMills = static_cast<double>(mills) * scalar;
+
+	// Convert the result back to long long int with rounding
+	long long int roundedTotalMills = static_cast<long long int>(std::round(totalMills));
+
+	// Check for overflow
+	if (roundedTotalMills > maxMoney) {
+		throw std::overflow_error(overflowMessage);
+	}
+
+	// Check for underflow
+	if (roundedTotalMills < minMoney) {
+		throw std::underflow_error(underflowMessage);
+	}
+
+	// Return the new Money object
+	return Money(roundedTotalMills, "anything");
+}
+
+
+
 Money Money::operator*(const Money& other)
 {
 	long long int resultMills = (mills * other.mills) / millsPerPenny;
@@ -178,6 +202,11 @@ bool Money::operator<(const Money& other)
 bool Money::operator==(const Money other)
 {
 	return mills == other.mills;
+}
+
+bool Money::operator!=(const Money other)
+{
+	return mills != other.mills;
 }
 
 std::string Money::ToString()

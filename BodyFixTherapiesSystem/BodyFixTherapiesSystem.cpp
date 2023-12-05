@@ -2,13 +2,21 @@
 #include <QtSql/qsqldatabase.h>
 #include <qmessagebox.h>
 #include <QInputDialog>
+#include <qfiledialog.h>
 #include <regex>
 #include "BodyFixTherapiesSystem.h"
 #include "DBHandler.h"
 #include "Herb.h"
 #include "Money.h"
 
-BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent)
+BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) 
+    : QWidget(parent), 
+    // for debug
+    settings("F:/Misc Coding Projects/C++ Projects/BodyFixTherapies/BodyFixTherapiesSystem/config.ini", QSettings::IniFormat)
+
+    // for release
+    // settings("./config.ini", QSettings::IniFormat)
+
 {
     ui.setupUi(this);
 
@@ -105,9 +113,11 @@ BodyFixTherapiesSystem::BodyFixTherapiesSystem(QWidget *parent) : QWidget(parent
     ui.tableEFHerbsInDatabase->setHorizontalHeaderLabels(herbTableHeaderLabels);
     ui.tableEFHerbsInFormula->setHorizontalHeaderLabels(herbAndAmount);
 
-    // ---------- manage suppliers ----------
-
     // ---------- settings ----------
+    connect(ui.btnSSave, &QPushButton::clicked, this, &BodyFixTherapiesSystem::SaveSettings);
+    connect(ui.btnSChooseDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::ChooseDatabase);
+    connect(ui.btnSCloneDatabase, &QPushButton::clicked, this, &BodyFixTherapiesSystem::CloneDatabase);
+    connect(ui.btnSBack, &QPushButton::clicked, this, &BodyFixTherapiesSystem::GoToMainMenu);
 
     // stop user from being able to edit tables by clicking on them
     ui.tableMHHerbTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -143,6 +153,18 @@ bool BodyFixTherapiesSystem::CheckForValidMonetaryValue(const std::string& input
     $ ends the regular expression
     /*/
     std::regex pattern("^\\d*\\.?\\d*$");
+    return std::regex_match(input, pattern);
+}
+
+bool BodyFixTherapiesSystem::CheckForValidPercentage(const std::string& input)
+{
+    /*/
+    100(\.0+)?: Matches 100 exactly, and allows any number of trailing zeros after a decimal point.
+    0(\.\d+)?: Matches 0, and allows a decimal portion.
+    \d(\.\d+)?: Matches any single-digit number (1-9) and allows a decimal portion.
+    [1-9]\d(\.\d+)?: Matches any two-digit number (10-99) and allows a decimal portion.
+    */
+    std::regex pattern(R"(^(100(\.0+)?|0(\.\d+)?|\d(\.\d+)?|[1-9]\d(\.\d+)?)$)");
     return std::regex_match(input, pattern);
 }
 
@@ -1306,11 +1328,97 @@ void BodyFixTherapiesSystem::BackFromEditFormula()
 }
 
 // ############################################################################################################################
+// ####################################### Settings functions #################################################################
+// ############################################################################################################################
+
+void BodyFixTherapiesSystem::GoToSettings() { 
+    ui.gridStackedWidget->setCurrentWidget(ui.pageSettings); 
+
+    ui.lineEditSPercentageAdded->setText(QString::number(settings.value("SETTINGS/HerbCostPercentageAdded", 0).toDouble()));
+    ui.lineEditSVeryLowOrNoStock->setText(QString::number(settings.value("SETTINGS/VeryLowOrNoStock", 0).toInt()));
+    ui.lineEditSLowStock->setText(QString::number(settings.value("SETTINGS/LowStock", 0).toInt()));
+    ui.lineEditSMediumStock->setText(QString::number(settings.value("SETTINGS/MediumStock", 0).toInt()));
+    ui.lineEditSHighStock->setText(QString::number(settings.value("SETTINGS/HighStock", 0).toInt()));
+    ui.lineEditSDatabaseInUse->setText(settings.value("SETTINGS/DatabasePath", "").toString());
+}
+
+void BodyFixTherapiesSystem::SaveSettings()
+{
+    if (!CheckForValidPercentage(ui.lineEditSPercentageAdded->text().toStdString())) {
+        QMessageBox::critical(this, "Error", "Please input a number between 0 and 100 in percentage of cost of herbs added to get cost to patient.");
+        return;
+    }
+
+    if (!CheckForValidStockAmount(ui.lineEditSVeryLowOrNoStock->text().toStdString())
+        || !CheckForValidStockAmount(ui.lineEditSLowStock->text().toStdString())
+        || !CheckForValidStockAmount(ui.lineEditSMediumStock->text().toStdString())
+        || !CheckForValidStockAmount(ui.lineEditSHighStock->text().toStdString())) {
+        QMessageBox::critical(this, "Error", "Please input a valid integer for every stock category.");
+        return;
+    }
+
+    if (ui.lineEditSVeryLowOrNoStock->text().toInt() < 0
+        || ui.lineEditSLowStock->text().toInt() < ui.lineEditSVeryLowOrNoStock->text().toInt()
+        || ui.lineEditSMediumStock->text().toInt() < ui.lineEditSLowStock->text().toInt()
+        || ui.lineEditSHighStock->text().toInt() < ui.lineEditSMediumStock->text().toInt()) {
+        QMessageBox::critical(this, "Error", "The numbers for the stock categories must follow this structure: High stock is higher than medium stock which is higher than low stock which is higher than very low or no stock which is higher than 0.");
+        return;
+    }
+
+    settings.setValue("SETTINGS/HerbCostPercentageAdded", ui.lineEditSPercentageAdded->text());
+    settings.setValue("SETTINGS/VeryLowOrNoStock", ui.lineEditSVeryLowOrNoStock->text());
+    settings.setValue("SETTINGS/LowStock", ui.lineEditSLowStock->text());
+    settings.setValue("SETTINGS/MediumStock", ui.lineEditSMediumStock->text());
+    settings.setValue("SETTINGS/HighStock", ui.lineEditSHighStock->text());
+    settings.setValue("SETTINGS/DatabasePath", ui.lineEditSDatabaseInUse->text());
+    settings.sync();
+
+    DBHandler::GetInstance().UpdateDatabase();
+    herbHandler.RefreshHerbsFromDatabase();
+
+    QMessageBox::information(this, "Success", "Settings updated successfully.");
+}
+
+void BodyFixTherapiesSystem::ChooseDatabase()
+{
+    QString defaultDir = QCoreApplication::applicationDirPath();
+    QString dbPath = QFileDialog::getOpenFileName(this, tr("Choose database to use"), defaultDir, tr("*.db"));
+
+    if (!dbPath.isEmpty()) {
+        ui.lineEditSDatabaseInUse->setText(QString::fromStdString(dbPath.toStdString()));
+    }
+}
+
+void BodyFixTherapiesSystem::CloneDatabase()
+{
+    // Get the source database path from the config file
+    QString sourceDbPath = settings.value("SETTINGS/DatabasePath", "./BFTDB.db").toString();
+
+    // Open a directory selection dialog
+    QString destDir = QFileDialog::getExistingDirectory(this, tr("Select Destination Directory"),
+        QCoreApplication::applicationDirPath());
+
+    if (!destDir.isEmpty()) {
+        // Construct the full path for the new database file in the selected directory
+        QFileInfo sourceFileInfo(sourceDbPath);
+        QString destDbPath = destDir + "/" + sourceFileInfo.fileName();
+
+        // Copy the database file
+        if (QFile::copy(sourceDbPath, destDbPath)) {
+            QMessageBox::information(this, tr("Success"), tr("Database cloned successfully."));
+        }
+        else {
+            QMessageBox::critical(this, tr("Error"), tr("Failed to clone the database."));
+        }
+    }
+}
+
+
+// ############################################################################################################################
 // ###################################### Inline navigation buttons ###########################################################
 // ############################################################################################################################
 
 inline void BodyFixTherapiesSystem::GoToMainMenu() { ui.gridStackedWidget->setCurrentWidget(ui.pageMainMenu); }
 //inline void BodyFixTherapiesSystem::GoToManageSuppliers() { ui.gridStackedWidget->setCurrentWidget(ui.pageManageSuppliers); }
-inline void BodyFixTherapiesSystem::GoToSettings() { ui.gridStackedWidget->setCurrentWidget(ui.pageSettings); }
 inline void BodyFixTherapiesSystem::GoToAddHerb() { ui.gridStackedWidget->setCurrentWidget(ui.pageAddHerb); }
 inline void BodyFixTherapiesSystem::QuitApp() { close(); }

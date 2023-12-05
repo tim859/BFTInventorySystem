@@ -3,7 +3,21 @@
 #include "Money.h"
 #include <iostream>
 
-HerbHandler::HerbHandler()
+HerbHandler::HerbHandler() :
+    // for debug
+    settings("F:/Misc Coding Projects/C++ Projects/BodyFixTherapies/BodyFixTherapiesSystem/config.ini", QSettings::IniFormat)
+
+    // for release
+    // settings("./config.ini", QSettings::IniFormat)
+{
+    RefreshHerbsFromDatabase();
+}
+
+std::vector<Herb>* HerbHandler::GetAllHerbs() {
+    return activeHerbList;
+}
+
+void HerbHandler::RefreshHerbsFromDatabase()
 {
     activeHerbList = new std::vector<Herb>;
     QSqlQuery herbQuery = DBHandler::GetInstance().GetAllHerbsFromDB();
@@ -18,10 +32,6 @@ HerbHandler::HerbHandler()
     }
 
     lastDBAccurateHerb = Herb();
-}
-
-std::vector<Herb>* HerbHandler::GetAllHerbs() {
-    return activeHerbList;
 }
 
 std::vector<Herb>* HerbHandler::GetSearchedHerbs(std::vector<Herb>* herbListToBeSearched, std::string searchString)
@@ -287,21 +297,21 @@ Herb HerbHandler::GetLastDBAccurateHerb()
 
 std::string HerbHandler::GetHexColourForStockAmount(int stockAmount)
 {
-    int veryLowOrNoStock = 200;
-    int lowStock = 500;
-    int mediumStock = 1000;
-    int highStock = 1500;
-
-    if (stockAmount <= veryLowOrNoStock) {
-        return "#610000";
+    if (stockAmount <= settings.value("SETTINGS/VeryLowOrNoStock", 0).toInt()) {
+        return "#610000"; // dark red
     }
-    else if (stockAmount <= lowStock) {
-        return "#99431f";
+    else if (stockAmount <= settings.value("SETTINGS/LowStock", 0).toInt()) {
+        return "#99431f"; // dark orange
     }
-    else if (stockAmount <= mediumStock) {
-        return "#957f07";
+    else if (stockAmount <= settings.value("SETTINGS/MediumStock", 0).toInt()) {
+        return "#957f07"; // dark yellow
     }
     else {
-        return "#154f30";
+        return "#154f30"; // dark green
     }
+}
+
+std::string HerbHandler::GetTotalHerbStockValue()
+{
+    return std::string();
 }

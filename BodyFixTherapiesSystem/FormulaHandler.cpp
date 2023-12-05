@@ -2,9 +2,14 @@
 #include "Herb.h"
 #include "Formula.h"
 #include <iostream>
-#include <qsqlerror.h>
+#include <QtSql/qsqlerror.h>
 
-FormulaHandler::FormulaHandler()
+FormulaHandler::FormulaHandler() : 
+    // for debug
+    settings("F:/Misc Coding Projects/C++ Projects/BodyFixTherapies/BodyFixTherapiesSystem/config.ini", QSettings::IniFormat)
+
+    // for release
+    // settings("./config.ini", QSettings::IniFormat)
 {
     herbsInActiveFormula = new std::vector<Herb>;
     lastDBAccurateFormula = Formula();
@@ -206,7 +211,9 @@ Money FormulaHandler::GetCostOfHerbsInFormula(int formulaIndex)
 
 Money FormulaHandler::GetCostToPatientOfFormula(int formulaIndex)
 {
-    return Money(GetCostOfHerbsInFormula(formulaIndex) + 10000);
+    double multiplier = (1 + (settings.value("SETTINGS/HerbCostPercentageAdded", 0).toDouble() / 100.0));
+
+    return (Money(GetCostOfHerbsInFormula(formulaIndex) * multiplier));
 }
 
 std::vector<Herb>* FormulaHandler::GetHerbsInActiveFormula()

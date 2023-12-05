@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <qsettings.h>
 #include "DBHandler.h"
 #include "Money.h"
 #include "Formula.h"
@@ -32,6 +33,7 @@ public:
 private:
 	// general formula properties and functions
 	std::vector<Formula> formulaList;
+	QSettings settings; // used to get and set values in config.ini
 
 	// create formula and edit formula properties and functions
 	// vectors of the herbs and amounts that are currently in the tableHerbsInFormula

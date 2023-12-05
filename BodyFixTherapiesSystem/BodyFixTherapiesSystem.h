@@ -2,6 +2,7 @@
 
 #include <QtWidgets/QWidget>
 #include <iostream>
+#include <qsettings.h>
 #include "ui_BodyFixTherapiesSystem.h"
 #include "HerbHandler.h"
 #include "FormulaHandler.h"
@@ -17,6 +18,7 @@ public:
 
 private slots:
     // slots for main menu
+    void GoToMainMenu();
     void GoToManageHerbs();
     void GoToManageFormulas();
     //void GoToManageSuppliers();
@@ -29,7 +31,12 @@ private slots:
     void GoToEditHerb();
     void BackFromAddHerb();
 
-    // slots for edit herbs
+    // slots for add herb
+    void AddHerb();
+
+    // slots for edit herb
+    void EditHerb();
+    void DeleteHerb();
     void GoToEditHerbStock();
     void AddStockOfHerb();
     void ReduceStockOfHerb();
@@ -57,34 +64,35 @@ private slots:
     void DeleteFormula();
     //void EditFormulaBack();
 
-    // slots used by multiple pages
-    void GoToMainMenu();
+    // slots for settings
+    void SaveSettings();
+    void ChooseDatabase();
+    void CloneDatabase();
 
 private:
     // general properties and functions
     Ui::BodyFixTherapiesSystemClass ui;
+    QSettings settings; // used to get and set values in config.ini
     std::string GetCurrentPageName();
     bool CheckForValidMonetaryValue(const std::string& input);
     bool CheckForValidStockAmount(const std::string& input);
+    bool CheckForValidPercentage(const std::string& input);
 
-    // manage herb properties and functions
+    // herb properties and functions
     HerbHandler herbHandler;
     std::vector<Herb>* currentHerbListInMHTable;
     void UpdateHerbTable(std::vector<Herb>* herbList, QTableWidget* table);
-    void AddHerb();
-    void EditHerb();
-    void DeleteHerb();
     void ClearHerbFields();
     bool CheckForChangesInHerb();
 
-    // manage formula properties and functions
+    // formula properties and functions
     FormulaHandler formulaHandler;
     std::vector<Formula>* fullFormulaList;
     std::vector<Formula>* currentFormulaListInMFTable;
-    void UpdateMFTable(std::vector<Formula>* formulaList);
-
-    // create formula and edit formula properties and functions
     std::vector<Herb> herbsToBeEdited; // herbs that have had their stock changed in the active herb list but should only have changes commmited to the db when the user commits those changes
+    std::vector<Herb>* currentHerbListInCFAllHerbsTable;
+    std::vector<Herb>* currentHerbListInEFAllHerbsTable;
+    void UpdateMFTable(std::vector<Formula>* formulaList);
     bool CheckForChangesInFormula();
     void ClearFormulaFields();
     void UpdateHerbCosts();
@@ -92,10 +100,4 @@ private:
     /// Sets contents of a herbs-in-formula table to the herb names and amounts currently stored in the active formula lists contained within formulaHandler
     /// </summary>
     void UpdateHerbsInFormulaTable();
-
-    // create formula properties and functions
-    std::vector<Herb>* currentHerbListInCFAllHerbsTable;
-
-    // edit formula properties and functions
-    std::vector<Herb>* currentHerbListInEFAllHerbsTable;
 };

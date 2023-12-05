@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-// the class will completely break if this include declaration is removed. no clue why but thats fine it can just be left here
+#include <qsettings.h>
 #include "DBHandler.h"
 #include "Herb.h"
 
@@ -11,6 +11,7 @@ class HerbHandler
 public:
 	HerbHandler();
 	std::vector<Herb>* GetAllHerbs();
+	void RefreshHerbsFromDatabase();
 	std::vector<Herb>* GetSearchedHerbs(std::vector<Herb>* herbListToBeSearched, std::string searchString);
 	// pass in index from combobox, for second value pass in 0 for ascending order and 1 for descending order
 	std::vector<Herb>* GetSortedHerbs(std::vector<Herb>* herbListToBeSorted, int index, int sortType);
@@ -29,6 +30,7 @@ public:
 	void SetLastDBAccurateHerb(Herb newLastDBAccurateHerb);
 	Herb GetLastDBAccurateHerb();
 	std::string GetHexColourForStockAmount(int stockAmount);
+	std::string GetTotalHerbStockValue();
 
 private:
 	// previous method:
@@ -47,4 +49,5 @@ private:
 	// update: delay is caused by populating a QTableWidget with data instead of anything to do with the database. Still, it's good to optimise this as much as possible.
 	std::vector<Herb>* activeHerbList;
 	Herb lastDBAccurateHerb;
+	QSettings settings;
 };
